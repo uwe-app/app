@@ -1,5 +1,5 @@
 @import "prosemirror.css";
-@import "example-setup.css";
+/*@import "example-setup.css";*/
 @import "menu.css";
 
 html {
@@ -151,7 +151,7 @@ input[type="text"] {
   border-bottom: 1px solid black;
 }
 
-.website-preview > header > form {
+.website-preview > header > :first-child {
   display: flex;
   justify-content: stretch;
 }
@@ -166,10 +166,16 @@ input[type="text"] {
   border-top: 1px solid black;
 }
 
+.file-editor > header,
 .website-preview > header {
   display: flex;
   flex-direction: row;
   justify-content: stretch;
+  align-items: center;
+}
+
+.file-editor > header > :first-child {
+  flex: 1;
 }
 
 .website-preview > header > div {

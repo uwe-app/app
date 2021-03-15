@@ -330,7 +330,7 @@ async fn start(
                                 )
                                 .header(header::REFERRER_POLICY, "origin")
                                 .header(header::ACCESS_CONTROL_ALLOW_ORIGIN, "*")
-                                .header(header::ACCESS_CONTROL_ALLOW_HEADERS, "Depth")
+                                .header(header::ACCESS_CONTROL_ALLOW_HEADERS, "Depth, Content-Type")
                                 .header(header::ACCESS_CONTROL_ALLOW_METHODS, "POST, GET, OPTIONS, PUT, PATCH, PROPFIND")
                         )
                         .guard(guard::Host(host.name()))
