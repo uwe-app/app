@@ -2,6 +2,7 @@ import {h} from 'preact';
 import {useEffect, useState, useContext} from 'preact/hooks';
 import {FileStat} from 'webdav/web';
 import {State} from './State';
+import humanFileSize from './utils/file-size';
 
 const Header = ({ ancestors, onSelect }) => {
 
@@ -50,7 +51,7 @@ const Footer = ({ listing }) => {
 
   if (listing) {
     return <footer>
-      <small>{listing.length} item(s) ({size})</small>
+      <small>{listing.length} item(s) ({humanFileSize(size)})</small>
     </footer>;
   }
   return null;

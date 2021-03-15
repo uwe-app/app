@@ -6,6 +6,7 @@ import {EditorView} from "prosemirror-view";
 
 import {setup} from "./prosemirror/index";
 import {defaultMarkdownSerializer} from './prosemirror/markdown-serializer';
+import humanFileSize from './utils/file-size';
 
 const Header = ({ file, onSave }) => {
 
@@ -52,7 +53,7 @@ const Content = ({ webdav, file, setEditor }) => {
 const Footer = ({ file }) => {
   if (file) {
     return <footer class="no-select">
-      <small>{file.filename} ({file.size})</small>
+      <small>{file.filename} ({humanFileSize(file.size)})</small>
     </footer>;
   }
   return null;
