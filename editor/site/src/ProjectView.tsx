@@ -87,6 +87,8 @@ export default function ProjectView() {
     </div>;
   } else if (result && valid && connection && url) {
 
+    const [measure, setMeasure] = useState(null);
+
     const webdav = createClient(connection.url + '/-/webdav');
     const onOpenFile = (file) => {
       setCurrentFile(file);
@@ -98,9 +100,10 @@ export default function ProjectView() {
         if (!/\/$/.test(path)) {
           path += '/';
         }
-        console.log('Show website URL path', path);
-        console.log('Show website URL path', connection.url + path);
         setUrl(connection.url + path);
+        // So the iframe dimensions are updated when the
+        // first file is opened!
+        setMeasure(true);
       }
     }
 
@@ -118,7 +121,7 @@ export default function ProjectView() {
         <FileEditor
           webdav={webdav}
           file={currentFile} />
-        <WebsitePreview url={url} />
+        <WebsitePreview measure={measure} url={url} />
       </section>
     </div>;
   }

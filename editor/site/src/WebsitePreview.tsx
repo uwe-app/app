@@ -108,16 +108,22 @@ const Content = ({ src }) => {
     />;
 }
 
-const Footer = () => {
+const Footer = ({ measure }) => {
   const [dimensions, setDimensions] = useState(null);
 
-  useEffect(() => {
-    const onResize = (e) => {
-      const el = document.querySelector('iframe.preview');
-      if (el) {
-        setDimensions({width: el.offsetWidth, height: el.offsetHeight});
-      }
+  const updateDimensions = (e) => {
+    const el = document.querySelector('iframe.preview');
+    if (el) {
+      setDimensions({width: el.offsetWidth, height: el.offsetHeight});
     }
+  }
+
+  useEffect(() => {
+    updateDimensions();
+  }, [measure]);
+
+  useEffect(() => {
+    const onResize = (e) => updateDimensions();
     window.addEventListener('resize', onResize);
     onResize();
     return () => window.removeEventListener('resize', onResize);
@@ -131,7 +137,7 @@ const Footer = () => {
   return null;
 }
 
-export default function WebsitePreview({ url }) {
+export default function WebsitePreview({ url, measure }) {
   const [src, setSource] = useState(url);
   const base = new URL(url);
 
@@ -156,6 +162,6 @@ export default function WebsitePreview({ url }) {
       onChange={onChange}
       onRefresh={onRefresh} />
     <Content src={src} />
-    <Footer />
+    <Footer measure={measure} />
   </div>;
 }
