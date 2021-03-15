@@ -72,6 +72,12 @@ pub fn run(args: &Editor) -> Result<()> {
         editor_host.set_disable_cache(true);
         editor_host.set_log(false);
 
+        #[cfg(debug_assertions)]
+        editor_host.set_endpoint(utils::generate_id(16));
+
+        //#[cfg(debug_assertions)]
+        //editor_host.set_watch(true);
+
         server.add_host(editor_host);
 
         /*

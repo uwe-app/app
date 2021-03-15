@@ -265,6 +265,8 @@ async fn start(
                 utils::generate_id(16)
             };
 
+            //println!("Using websocket endpoint {:?} {:?}", endpoint, watch);
+
             // Collect all authorities and setup guards for virtual host detection
             let mut host_names = vec![host.name()];
             if let Some(ref authorities) = authorities {
