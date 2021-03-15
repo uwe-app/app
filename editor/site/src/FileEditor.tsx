@@ -42,7 +42,7 @@ const Content = ({ webdav, file, setEditor }) => {
 
       setEditor({state, view: editor})
     }
-  }, []);
+  }, [file]);
 
   return <div class="content">
     <div ref={view}></div>
@@ -65,8 +65,8 @@ export default function FileEditor({ webdav, file }) {
     e.preventDefault();
     if (editor) {
       const content = defaultMarkdownSerializer.serialize(editor.view.state.doc);
-      console.log(content);
-      console.log('Save file', file.filename);
+      //console.log(content);
+      //console.log('Save file', file.filename);
       const result = await webdav.putFileContents(file.filename, content);
     }
   }

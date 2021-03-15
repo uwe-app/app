@@ -17,6 +17,7 @@ export default function ProjectView() {
   const [valid, setValid] = useState(true);
   const [workerId, setWorkerId] = useState(null);
   const [connection, setConnection] = useState(null);
+  const [url, setUrl] = useState(null);
   const [result, setResult] = useState(null);
   const [currentFile, setCurrentFile] = useState(null);
 
@@ -59,6 +60,7 @@ export default function ProjectView() {
             const info = await state.projects.status(workerId);
             if (info) {
               setConnection(info);
+              setUrl(info.url);
               clearInterval(id);
             }
           }
@@ -83,10 +85,23 @@ export default function ProjectView() {
       <Close />
       <p>Project not found</p>
     </div>;
-  } else if (result && valid && connection) {
+  } else if (result && valid && connection && url) {
+
     const webdav = createClient(connection.url + '/-/webdav');
-    const onOpenFile = (item) => {
-      setCurrentFile(item);
+    const onOpenFile = (file) => {
+      setCurrentFile(file);
+      // TODO: call the backend to respect rewrite-index for a file
+      const ptn = /(index)?\.(md|html)$/;
+      if (ptn.test(file.filename)) {
+        // Assume rewrite-index for now...
+        let path = file.filename.replace(ptn, '');
+        if (!/\/$/.test(path)) {
+          path += '/';
+        }
+        console.log('Show website URL path', path);
+        console.log('Show website URL path', connection.url + path);
+        setUrl(connection.url + path);
+      }
     }
 
         //<p>Id: {result.id}</p>
@@ -103,7 +118,7 @@ export default function ProjectView() {
         <FileEditor
           webdav={webdav}
           file={currentFile} />
-        <WebsitePreview url={connection.url} />
+        <WebsitePreview url={url} />
       </section>
     </div>;
   }

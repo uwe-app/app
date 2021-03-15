@@ -146,6 +146,10 @@ export default function WebsitePreview({ url }) {
     setSource(src);
   }
 
+  useEffect(() => {
+    setSource(url);
+  }, [url]);
+
   return <div class="website-preview">
     <Header
       base={base}
