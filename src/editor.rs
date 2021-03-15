@@ -60,7 +60,7 @@ pub fn run(args: &Editor) -> Result<()> {
         editor_host.set_name(config::LOOPBACK_IP.to_string());
 
         #[cfg(debug_assertions)]
-        editor_host.set_directory(PathBuf::from("editor/build/debug"));
+        editor_host.set_directory(PathBuf::from("../editor/build/debug"));
 
         #[cfg(not(debug_assertions))]
         editor_host.set_directory(std::env::current_dir()?);

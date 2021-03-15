@@ -4,7 +4,7 @@ use std::borrow::Cow;
 use config::memfs::{EmbeddedFileSystem, MemoryFileSystem};
 
 #[derive(RustEmbed)]
-#[folder = "../../editor/build/release"]
+#[folder = "../../../editor/build/release"]
 pub struct Editor;
 
 #[derive(Debug, Clone)]

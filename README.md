@@ -8,6 +8,7 @@ Repositories must be siblings, for example:
 ├── blueprints
 ├── community
 ├── documentation
+├── editor
 ├── integrations
 ├── library
 ├── plugins
