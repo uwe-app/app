@@ -77,8 +77,6 @@ pub async fn watch(
         .map(|h| h.name().to_string())
         .collect::<Vec<String>>();
 
-    println!("Using channel names {:?}", channel_names);
-
     let (server_channels, watch_channels) = create_channels(channel_names)?;
 
     // Server must have at least a single virtual host
