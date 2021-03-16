@@ -142,7 +142,12 @@ impl Renderer {
                 self.build(parser, render_options, &mut output).await?;
             }
             RenderTarget::File(ref path) => {
-                if render_options.reload_data {
+                let options = &self.info.context.options;
+                let types = options.settings.types.as_ref().unwrap();
+                // WARN: Must test the file path is a valid page before reloading data
+                // WARN: otherwise binary files may be treated as pages and we would
+                // WARN: inadvertently try to parse front matter from a binary file!
+                if render_options.reload_data && options.has_parse_file_match(path, types) {
                     self.reload(path)?;
                 }
                 self.one(parser, path).await?;

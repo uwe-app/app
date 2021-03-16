@@ -80,7 +80,7 @@ impl RuntimeOptions {
         return self.rewrite_index_file(target, result, types).is_some();
     }
 
-    fn has_parse_file_match<P: AsRef<Path>>(
+    pub fn has_parse_file_match<P: AsRef<Path>>(
         &self,
         file: P,
         types: &RenderTypes,
