@@ -107,8 +107,8 @@ pub fn window(url: String, ps_tx: Sender<ProcessMessage>) -> crate::Result<()> {
         title: "Universal Web Editor".to_string(),
         width,
         height,
-        min_width: Some(width),
-        min_height: Some(height),
+        //min_width: Some(width),
+        //min_height: Some(height),
         ..Default::default()
     };
     app.add_window_with_configs(attrs, Some(handler), None)?;
