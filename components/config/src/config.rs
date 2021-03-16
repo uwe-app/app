@@ -141,6 +141,7 @@ pub const PUBLIC_HTML: &str = "public_html";
 pub const ENV_DISABLE_SSL:&str = "UWE_DISABLE_SSL";
 pub const ENV_LOOPBACK_HOST:&str = "UWE_LOOPBACK_HOST";
 pub const ENV_WEBDAV:&str = "UWE_WEBDAV";
+pub const ENV_WEBSOCKET_URL:&str = "UWE_WEBSOCKET_URL";
 
 // Webdav
 pub const WEBDAV_MOUNT_PATH: &str = "/-/webdav";

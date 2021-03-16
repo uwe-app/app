@@ -34,16 +34,17 @@ Repositories must be siblings, for example:
 
 ## Editor
 
-To develop the editor user interface use a release build of `uwe` to set up a live reload server and run the `editor` command with `debug_assertions`:
+Assuming SSL certificates for localhost are enabled, first start the editor web server in debug mode:
 
 ```
-# Create a live reload development server
-uwe dev --exec --headless editor
-# Show the editor native window
+UWE_WEBSOCKET_URL=wss://localhost:8843 cargo run -- dev --headless --exec ../editor
+```
+
+Then open the editor window:
+
+```
 cargo run -- editor
 ```
-
-Now as you make changes to the files in the `editor/site` folder the native window interface will automatically reload.
 
 ## Name Servers
 

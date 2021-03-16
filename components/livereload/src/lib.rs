@@ -12,17 +12,34 @@ const SCRIPT: &str = include_str!("livereload.js");
 const CSS: &str = include_str!("livereload.css");
 
 fn get_script(endpoint: &str) -> String {
-    // NOTE: we use an IIFE (immediately invoked function expression)
-    // NOTE: and the template closes and calls the expression but we
-    // NOTE: open it here
-    let mut script = String::from(format!(
-        "(function() {{
-            const protocol = document.location.protocol === 'https:' ? 'wss' : 'ws';
+    let ws_host = std::env::var(config::ENV_WEBSOCKET_URL).ok();
+
+    // Start IIFE
+    let mut script = String::from("(function() {");
+
+    if let Some(host) = ws_host {
+        script.push_str(&format!(
+            "const socket = new WebSocket('{}/{}');\n",
+            host,
+            endpoint
+        ));
+    } else {
+        // Setup the websocket connection.
+        //
+        // NOTE: We use `document.location.host` so that ephemeral ports work
+        // NOTE: as expected.
+        script.push_str(&format!(
+            "const protocol = document.location.protocol === 'https:' ? 'wss' : 'ws';
             const url = `${{protocol}}://${{document.location.host}}/{}`;
             const socket = new WebSocket(url);\n",
-        endpoint
-    ));
+            endpoint
+        ));
+    }
+
+    // Main script content
     script.push_str(SCRIPT);
+    // End IIFE
+    script.push_str("})();");
     script
 }
 

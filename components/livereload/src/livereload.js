@@ -40,4 +40,4 @@ if (window.parent) {
   }
 }
 
-window.onbeforeunload = () => socket.close()})();
+window.onbeforeunload = () => socket.close();
