@@ -96,6 +96,33 @@ async fn dav_handler(
     }
 }
 
+async fn preflight(
+    req: HttpRequest,
+) -> HttpResponse {
+
+    /*
+    println!("Got pre-flight {:?}", req.path());
+    println!("Got pre-flight {:#?}", req.headers().get(header::ACCESS_CONTROL_REQUEST_HEADERS));
+    println!("Got pre-flight {:#?}", req.headers().get(header::ACCESS_CONTROL_REQUEST_METHOD));
+    println!("Got pre-flight {:#?}", req.headers().get(header::ORIGIN));
+    */
+
+    let mut builder = HttpResponse::Ok();
+    if let Some(origin) = req.headers().get(header::ORIGIN) {
+        builder.insert_header((header::ACCESS_CONTROL_ALLOW_ORIGIN, origin));
+    }
+
+    if let Some(method) = req.headers().get(header::ACCESS_CONTROL_REQUEST_METHOD) {
+        builder.insert_header((header::ACCESS_CONTROL_ALLOW_METHODS, method));
+    }
+
+    if let Some(headers) = req.headers().get(header::ACCESS_CONTROL_REQUEST_HEADERS) {
+        builder.insert_header((header::ACCESS_CONTROL_ALLOW_HEADERS, headers));
+    }
+
+    builder.body("")
+}
+
 async fn embedded_handler(
     req: HttpRequest,
     memfs: web::Data<Box<dyn EmbeddedFileSystem>>,
@@ -324,22 +351,23 @@ async fn start(
                 app = app.service(
                     web::scope(webdav.mount_path())
                         .wrap(NormalizePath::new(TrailingSlash::Always))
+                        .wrap(Condition::new(log, Compat::new(Logger::default())))
                         .wrap(
+                            // Access-Control-Max-Age: 86400
                             DefaultHeaders::new()
                                 .header(
                                     header::SERVER,
                                     config::generator::user_agent(),
                                 )
                                 .header(header::REFERRER_POLICY, "origin")
+                                .header(header::ACCESS_CONTROL_MAX_AGE, "86400")
                                 .header(header::ACCESS_CONTROL_ALLOW_ORIGIN, "*")
                                 .header(header::ACCESS_CONTROL_ALLOW_HEADERS, "Depth, Content-Type")
                                 .header(header::ACCESS_CONTROL_ALLOW_METHODS, "POST, GET, OPTIONS, PUT, PATCH, PROPFIND")
                         )
                         .guard(guard::Host(host.name()))
                         .data(dav_server)
-                        .route("/{tail:.*}", web::method(http::Method::OPTIONS).to(|| {
-                            HttpResponse::Ok()
-                        }))
+                        .route("/{tail:.*}", web::method(http::Method::OPTIONS).to(preflight))
                         .service(web::resource("/{tail:.*}").to(dav_handler)),
                 );
             }
