@@ -337,6 +337,9 @@ async fn start(
                         )
                         .guard(guard::Host(host.name()))
                         .data(dav_server)
+                        .route("/{tail:.*}", web::method(http::Method::OPTIONS).to(|| {
+                            HttpResponse::Ok()
+                        }))
                         .service(web::resource("/{tail:.*}").to(dav_handler)),
                 );
             }
