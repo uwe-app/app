@@ -127,10 +127,9 @@ impl Handler<Connect> for LiveReloadServer {
     type Result = usize;
 
     fn handle(&mut self, msg: Connect, _: &mut Context<Self>) -> Self::Result {
-        //println!("Someone joined");
 
         // notify all users in same room
-        self.send_message(&"Main".to_owned(), "Someone joined", 0);
+        //self.send_message(&"Main".to_owned(), "Someone joined", 0);
 
         // register session with random id
         let id = self.rng.gen::<usize>();
@@ -143,7 +142,7 @@ impl Handler<Connect> for LiveReloadServer {
             .insert(id);
 
         let count = self.visitor_count.fetch_add(1, Ordering::SeqCst);
-        debug!("Websocket client connected, visitor count {:?}", count);
+        debug!("Websocket client connected, visitor count {:?} {:?}", count, self.rooms.len());
         //self.send_message("Main", &format!("Total visitors {}", count), 0);
 
         //println!("Id is {:?}", id);

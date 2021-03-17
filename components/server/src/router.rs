@@ -2,7 +2,7 @@ use std::collections::HashMap;
 use std::fs::File;
 use std::io::BufReader;
 use std::pin::Pin;
-use std::sync::{atomic::AtomicUsize, Arc};
+use std::sync::{atomic::AtomicUsize, Arc, Mutex};
 
 use serde::Serialize;
 use serde_json::json;
@@ -194,7 +194,6 @@ async fn start(
     let mut virtual_hosts = Vec::new();
 
     let mut host_connections = HashMap::new();
-    //let host_connections_info = Arc::clone(&host_connections);
 
     // Print each host name here otherwise it would be
     // duplicated for each worker thread if we do it within
@@ -262,10 +261,14 @@ async fn start(
     let app_state = Arc::new(AtomicUsize::new(0));
     let reload_server = LiveReloadServer::new(app_state.clone()).start();
 
+    let broadcast_started = Arc::new(Mutex::new(false));
+
     let server = HttpServer::new(move || {
         let mut app: App<_, _> = App::new()
             .data(app_state.clone())
             .data(reload_server.clone());
+
+        let broadcast_start = Arc::clone(&broadcast_started);
 
         //.wrap(Logger::default());
 
@@ -298,25 +301,30 @@ async fn start(
             // Requires a thread per host as we need to block whilst waiting
             // for notifications on the reload channel.
             if watch {
-                let broadcast_server = reload_server.clone();
-                let reload_rx =
-                    channels.websockets.get(host.name()).unwrap().clone();
-                let mut live_reload_rx = reload_rx.subscribe();
+                let mut started = broadcast_start.lock().unwrap();
+                if !&*started {
+                    let broadcast_server = reload_server.clone();
+                    let reload_rx =
+                        channels.websockets.get(host.name()).unwrap().clone();
+                    let mut live_reload_rx = reload_rx.subscribe();
 
-                std::thread::spawn(move || {
-                    let rt = tokio::runtime::Runtime::new().unwrap();
-                    rt.block_on(async move {
-                        while let Ok(m) = live_reload_rx.recv().await {
-                            match m {
-                                Message::Text(message) => {
-                                    broadcast_server.do_send(
-                                        reload_server::Message(message),
-                                    );
+                    std::thread::spawn(move || {
+                        let rt = tokio::runtime::Runtime::new().unwrap();
+                        rt.block_on(async move {
+                            while let Ok(m) = live_reload_rx.recv().await {
+                                match m {
+                                    Message::Text(message) => {
+                                        println!("Watch thread got notification {:?}", message);
+                                        broadcast_server.do_send(
+                                            reload_server::Message(message),
+                                        );
+                                    }
                                 }
                             }
-                        }
+                        });
                     });
-                });
+                    *started = true;
+                }
             }
 
             // Setup webdav route

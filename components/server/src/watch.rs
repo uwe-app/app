@@ -3,7 +3,7 @@ use std::convert::TryInto;
 use std::sync::{Arc, RwLock};
 use std::time::{Duration, SystemTime};
 
-use log::{error, info};
+use log::{error, info, debug};
 
 use futures_util::FutureExt;
 use notify::{RecommendedWatcher, RecursiveMode, Watcher};
@@ -88,7 +88,11 @@ pub async fn watch(
     opts.set_authorities(authorities);
     opts.set_hosts(hosts);
     opts.set_disable_signals(true);
-    opts.set_workers(2);
+
+    // WARN: If we set up more workers currently this will result in websocket
+    // WARN: broadcast notifications being duplicated!
+    opts.set_workers(1);
+
     if let Some(_) = std::env::var(config::ENV_DISABLE_SSL).ok() {
         opts.set_allow_ssl_from_env(false);
         opts.set_ssl(None);
@@ -276,6 +280,8 @@ fn spawn_monitor(
         let watch_channels = Arc::clone(&channels);
 
         let started_tx = watcher_tx.clone();
+
+        debug!("Create file system watcher {:?}", w.name);
 
         std::thread::spawn(move || {
             let rt = tokio::runtime::Runtime::new().unwrap();
