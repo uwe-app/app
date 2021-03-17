@@ -2,7 +2,7 @@ use std::collections::HashMap;
 use std::fs::File;
 use std::io::BufReader;
 use std::pin::Pin;
-use std::sync::{atomic::AtomicUsize, Arc, Mutex};
+use std::sync::{atomic::AtomicUsize, Arc};
 
 use serde::Serialize;
 use serde_json::json;
@@ -193,6 +193,9 @@ async fn start(
 
     let mut virtual_hosts = Vec::new();
 
+    let mut host_connections = HashMap::new();
+    //let host_connections_info = Arc::clone(&host_connections);
+
     // Print each host name here otherwise it would be
     // duplicated for each worker thread if we do it within
     // the HttpServer::new setup closure
@@ -234,6 +237,7 @@ async fn start(
 
         if let Some(ref endpoint) = host.endpoint() {
             info!("Websocket endpoint {}", endpoint);
+            host_connections.insert(host.name().to_string(), endpoint.to_string());
         }
 
         let virtual_host = VirtualHost {
@@ -257,9 +261,6 @@ async fn start(
 
     let app_state = Arc::new(AtomicUsize::new(0));
     let reload_server = LiveReloadServer::new(app_state.clone()).start();
-
-    let host_connections = Arc::new(Mutex::new(HashMap::new()));
-    let host_connections_info = Arc::clone(&host_connections);
 
     let server = HttpServer::new(move || {
         let mut app: App<_, _> = App::new()
@@ -365,6 +366,7 @@ async fn start(
                 Arc::new(None)
             };
 
+            // Handle serving embedded file system used for the editor
             if let Some(ref embedded) = host.embedded() {
                 app = app.service(
                     web::resource("/{tail:.*}")
@@ -372,14 +374,11 @@ async fn start(
                         .route(web::get().to(embedded_handler))
                 );
 
+            // Normal virtual host configuration
             } else {
 
+                // Endpoint for a websocket server
                 if let Some(ref endpoint) = endpoint {
-                    {
-                        let mut endpoints = host_connections_info.lock().unwrap();
-                        endpoints.insert(host.name().to_string(), endpoint.clone());
-                    }
-
                     app = app.service(
                         web::resource(endpoint)
                             .route(web::get().to(ws_index)),
@@ -687,18 +686,10 @@ async fn start(
 
     let mut addrs = server.addrs();
 
-    let host_endpoints = Arc::clone(&host_connections);
-
     let bind_notify = async move {
         if !addrs.is_empty() {
-
-            let endpoints = {
-                let endpoints = host_endpoints.lock().unwrap();
-                endpoints.clone()
-            };
-
             let addr = addrs.swap_remove(0);
-            let info = ConnectionInfo::new(addr, host, use_ssl, endpoints);
+            let info = ConnectionInfo::new(addr, host, use_ssl, host_connections.clone());
             match bind.send(info) {
                 Err(_) => {
                     warn!("Failed to send connection info on bind channel");
