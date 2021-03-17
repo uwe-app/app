@@ -821,7 +821,7 @@ pub struct HostInfo {
     pub project: Project,
     pub source: PathBuf,
     pub target: PathBuf,
-    pub endpoint: String,
+    pub endpoint: Option<String>,
 }
 
 pub enum HostNameMode {
@@ -846,7 +846,8 @@ pub struct HostSettings {
 #[derive(Default)]
 pub struct CompileResult {
     pub projects: Vec<Project>,
-    pub host_settings: HostSettings,
+    host_settings: HostSettings,
+    live_reload: bool,
 }
 
 impl Into<HostResult> for CompileResult {
@@ -858,6 +859,8 @@ impl Into<HostResult> for CompileResult {
             HostNameMode::Always => true,
         };
 
+        let live_reload = self.live_reload;
+
         let hosts: Vec<HostInfo> = self
             .projects
             .into_iter()
@@ -865,7 +868,12 @@ impl Into<HostResult> for CompileResult {
                 let name = project.config.get_local_host_name(use_subdomain);
                 let source = project.options.source.clone();
                 let target = project.options.build_target().clone();
-                let endpoint = utils::generate_id(16);
+                // NOTE: Only assign this when live_reload is enabled so
+                // NOTE: that the web server only sets up websocket
+                // NOTE: handling when live reload is enabled.
+                let endpoint = if live_reload {
+                    Some(utils::generate_id(16))
+                } else { None };
                 HostInfo {
                     name,
                     project,
@@ -1009,6 +1017,7 @@ pub async fn build<F, B, P: AsRef<Path>>(
     args: &ProfileSettings,
     builder: B,
     host_settings: HostSettings,
+    live_reload: bool,
 ) -> Result<CompileResult>
 where
     F: Future<Output = BuildResult>,
@@ -1019,6 +1028,7 @@ where
     Ok(CompileResult {
         projects,
         host_settings,
+        live_reload,
     })
 }
 
@@ -1030,12 +1040,14 @@ pub async fn compile<P: AsRef<Path>>(
     project: P,
     args: &ProfileSettings,
     host_settings: HostSettings,
+    live_reload: bool,
 ) -> Result<CompileResult> {
     let workspace_builder = WorkspaceBuilder::new(project.as_ref(), args)?;
     let projects = workspace_builder.build(default_compiler).await?;
     Ok(CompileResult {
         projects,
         host_settings,
+        live_reload,
     })
 }
 

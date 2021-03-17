@@ -408,11 +408,6 @@ pub struct HostConfig {
     /// Websocket endpoint when watching for file system changes.
     #[serde(skip)]
     endpoint: Option<String>,
-
-    /// Flag that indicates this host should be configured
-    /// for file system watching.
-    #[serde(skip)]
-    watch: bool,
 }
 
 impl Default for HostConfig {
@@ -428,7 +423,6 @@ impl Default for HostConfig {
             require_index: true,
             deny_iframe: true,
             log: false,
-            watch: false,
         }
     }
 }
@@ -499,16 +493,8 @@ impl HostConfig {
         &self.endpoint
     }
 
-    pub fn set_endpoint(&mut self, endpoint: String) {
-        self.endpoint = Some(endpoint);
-    }
-
-    pub fn watch(&self) -> bool {
-        self.watch
-    }
-
-    pub fn set_watch(&mut self, watch: bool) {
-        self.watch = watch;
+    pub fn set_endpoint(&mut self, endpoint: Option<String>) {
+        self.endpoint = endpoint;
     }
 
     pub fn log(&self) -> bool {

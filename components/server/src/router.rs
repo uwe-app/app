@@ -232,6 +232,10 @@ async fn start(
             info!("Webdav {}", webdav.directory().display());
         }
 
+        if let Some(ref endpoint) = host.endpoint() {
+            info!("Websocket endpoint {}", endpoint);
+        }
+
         let virtual_host = VirtualHost {
             name: host.name().to_string(),
             url: opts.get_host_url(host.name()),
@@ -272,19 +276,8 @@ async fn start(
                 host.redirects().clone().unwrap_or(Default::default());
             let error_page = host.directory().join(config::ERROR_HTML);
 
-            let watch = host.watch();
-            let endpoint = if let Some(ref endpoint) = host.endpoint() {
-                endpoint.clone()
-            } else {
-                utils::generate_id(16)
-            };
-
-            {
-                let mut endpoints = host_connections_info.lock().unwrap();
-                endpoints.insert(host.name().to_string(), endpoint.clone());
-            }
-
-            //println!("Using websocket endpoint {:?} {:?}", endpoint, watch);
+            let endpoint = host.endpoint().clone();
+            let watch = host.endpoint().is_some();
 
             // Collect all authorities and setup guards for virtual host detection
             let mut host_names = vec![host.name()];
@@ -380,6 +373,19 @@ async fn start(
                 );
 
             } else {
+
+                if let Some(ref endpoint) = endpoint {
+                    {
+                        let mut endpoints = host_connections_info.lock().unwrap();
+                        endpoints.insert(host.name().to_string(), endpoint.clone());
+                    }
+
+                    app = app.service(
+                        web::resource(endpoint)
+                            .route(web::get().to(ws_index)),
+                    );
+                }
+
                 app = app.service(
                     web::scope("/")
                         // Handle redirect mappings
@@ -543,11 +549,6 @@ async fn start(
                             false
                         }))
                         .wrap(Condition::new(log, Compat::new(Logger::default())))
-                        .service(
-                            web::resource(&endpoint)
-                                //.guard()
-                                .route(web::get().to(ws_index)),
-                        )
                         // Serve static files
                         .service(
                             Files::new("", host.directory().to_path_buf())

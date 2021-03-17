@@ -46,7 +46,7 @@ pub async fn run(opts: Test) -> Result<()> {
 
     get_state(Some(RwLock::new(state)));
 
-    build(&project, &profile, test_compiler, Default::default()).await?;
+    build(&project, &profile, test_compiler, Default::default(), false).await?;
     Ok(())
 }
 

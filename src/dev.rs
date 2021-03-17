@@ -13,10 +13,13 @@ pub async fn run<P: AsRef<Path>>(
     let port = args.get_port().clone();
 
     // Must mark the build profile for live reload
+    // so that livereload runtime assets (javascript/css)
+    // are configured correctly.
     args.live = Some(true);
 
     // Compile the project
-    let result = workspace::compile(project, &args, Default::default()).await?;
+    let result = workspace::compile(
+        project, &args, Default::default(), true).await?;
 
     // Start the webserver
     server::watch(

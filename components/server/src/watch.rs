@@ -46,7 +46,6 @@ pub async fn watch(
         host_result.try_into()?;
 
     for (info, host) in host_configs.iter_mut() {
-        host.set_watch(true);
         host.set_disable_cache(true);
         if let Some(_) = std::env::var(config::ENV_LOOPBACK_HOST).ok() {
             host.set_name(config::LOOPBACK_IP.to_string());
@@ -170,7 +169,9 @@ fn create_resources(hosts: &Vec<HostInfo>) -> Result<()> {
     hosts.iter().try_for_each(|host| {
         // Write out the livereload javascript using the correct
         // websocket endpoint which the server will create later
-        livereload::write(&host.project.config, &host.target, &host.endpoint)?;
+        if let Some(ref endpoint) = host.endpoint {
+            livereload::write(&host.project.config, &host.target, endpoint)?;
+        }
         Ok::<(), Error>(())
     })?;
 
