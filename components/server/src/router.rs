@@ -1,7 +1,8 @@
+use std::collections::HashMap;
 use std::fs::File;
 use std::io::BufReader;
 use std::pin::Pin;
-use std::sync::{atomic::AtomicUsize, Arc};
+use std::sync::{atomic::AtomicUsize, Arc, Mutex};
 
 use serde::Serialize;
 use serde_json::json;
@@ -253,6 +254,9 @@ async fn start(
     let app_state = Arc::new(AtomicUsize::new(0));
     let reload_server = LiveReloadServer::new(app_state.clone()).start();
 
+    let host_connections = Arc::new(Mutex::new(HashMap::new()));
+    let host_connections_info = Arc::clone(&host_connections);
+
     let server = HttpServer::new(move || {
         let mut app: App<_, _> = App::new()
             .data(app_state.clone())
@@ -268,29 +272,17 @@ async fn start(
                 host.redirects().clone().unwrap_or(Default::default());
             let error_page = host.directory().join(config::ERROR_HTML);
 
-            /*
-            let address = opts.get_sock_addr(PortType::Infer)?;
-            let port = address.port();
-            let mut cors = warp::cors().allow_any_origin();
-            if port > 0 {
-                let scheme = if use_tls {
-                    config::SCHEME_HTTPS
-                } else {
-                    config::SCHEME_HTTP
-                };
-                let origin = format!("{}//{}:{}", scheme, &host.name, port);
-                cors = warp::cors()
-                    .allow_origin(origin.as_str())
-                    .allow_methods(vec!["GET"]);
-            }
-            */
-
             let watch = host.watch();
             let endpoint = if let Some(ref endpoint) = host.endpoint() {
                 endpoint.clone()
             } else {
                 utils::generate_id(16)
             };
+
+            {
+                let mut endpoints = host_connections_info.lock().unwrap();
+                endpoints.insert(host.name().to_string(), endpoint.clone());
+            }
 
             //println!("Using websocket endpoint {:?} {:?}", endpoint, watch);
 
@@ -694,10 +686,18 @@ async fn start(
 
     let mut addrs = server.addrs();
 
+    let host_endpoints = Arc::clone(&host_connections);
+
     let bind_notify = async move {
         if !addrs.is_empty() {
+
+            let endpoints = {
+                let endpoints = host_endpoints.lock().unwrap();
+                endpoints.clone()
+            };
+
             let addr = addrs.swap_remove(0);
-            let info = ConnectionInfo::new(addr, host, use_ssl);
+            let info = ConnectionInfo::new(addr, host, use_ssl, endpoints);
             match bind.send(info) {
                 Err(_) => {
                     warn!("Failed to send connection info on bind channel");

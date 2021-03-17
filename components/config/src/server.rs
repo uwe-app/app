@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::fs;
 use std::net::{SocketAddr, ToSocketAddrs};
 use std::path::{Path, PathBuf};
@@ -54,18 +55,19 @@ pub struct ConnectionInfo {
     host: String,
     tls: bool,
     url: String,
+    endpoints: HashMap<String, String>,
 }
 
 impl ConnectionInfo {
 
-    pub fn new(addr: SocketAddr, host: String, tls: bool) -> Self {
+    pub fn new(addr: SocketAddr, host: String, tls: bool, endpoints: HashMap<String, String>) -> Self {
         let scheme = if tls {
             crate::SCHEME_HTTPS
         } else {
             crate::SCHEME_HTTP
         };
         let url = crate::to_url_string(scheme, &host, addr.port());
-        Self {addr, host, tls, url}
+        Self {addr, host, tls, url, endpoints}
     }
 
     pub fn url(&self) -> &str {
