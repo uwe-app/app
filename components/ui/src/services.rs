@@ -195,8 +195,8 @@ impl Service for ProjectService {
             let mut params: Vec<ProjectManifestEntry> = req.deserialize()?;
             if !params.is_empty() {
                 let entry = params.swap_remove(0);
-                project::add(entry).map_err(Box::from)?;
-                response = Some(req.into());
+                let id = project::add(entry).map_err(Box::from)?;
+                response = Some((req, Value::String(id)).into());
             } else {
                 return Err((req, "Method expects parameters").into());
             }

@@ -93,7 +93,7 @@ fn flush(manifest: ProjectManifest) -> Result<()> {
 /// Add a project to the manifest.
 ///
 /// The project is added to the in-memory store and flushed to disc.
-pub fn add(mut entry: ProjectManifestEntry) -> Result<()> {
+pub fn add(mut entry: ProjectManifestEntry) -> Result<String> {
     let mut manifest = manifest().write().unwrap();
 
     if entry.path.is_relative() {
@@ -112,10 +112,12 @@ pub fn add(mut entry: ProjectManifestEntry) -> Result<()> {
         entry.id = Some(crate::checksum(&entry.path)?);
     }
 
+    let id = entry.id.clone().unwrap();
+
     manifest.project.insert(entry);
     flush(manifest.clone())?;
 
-    Ok(())
+    Ok(id)
 }
 
 /// Remove a project from the manifest.
