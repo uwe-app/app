@@ -19,6 +19,9 @@ pub enum Error {
     #[error("Not a file {0}")]
     NotFile(PathBuf),
 
+    #[error("Path {0} error ({1})")]
+    PathIo(PathBuf, String),
+
     #[error("Path {0} is absolute but a relative path is required")]
     NotRelative(PathBuf),
 

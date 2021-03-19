@@ -1,5 +1,5 @@
 use std::collections::HashSet;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::sync::RwLock;
 
 use once_cell::sync::OnceCell;
@@ -177,4 +177,29 @@ pub fn list() -> Result<ProjectList> {
     projects.sort();
 
     Ok(projects)
+}
+
+// Import a project path if it does not exist.
+pub fn exists<P: AsRef<Path>>(path: P) -> bool {
+    let manifest = manifest().read().unwrap();
+    let path = path.as_ref();
+    for item in manifest.project.iter() {
+        if item.path == path {
+            return true;
+        }
+    }
+    false
+}
+
+// Import a project path if it does not exist.
+pub fn import<P: AsRef<Path>>(path: P) -> Result<()> {
+    let exists = exists(path.as_ref());
+    if !exists {
+        let entry = ProjectManifestEntry {
+            id: Some(crate::checksum(path.as_ref()).unwrap()),
+            path: path.as_ref().to_path_buf(),
+        };
+        add(entry)?;
+    }
+    Ok(())
 }

@@ -26,6 +26,16 @@ pub fn run(args: &Editor) -> Result<()> {
     // Load user projects list
     project::load()?;
 
+    // Flag so we can set up the initial URL
+    let is_project_editor = args.project.is_some();
+
+    // Import a project if we need to
+    if let Some(ref path) = args.project {
+        let path = path.canonicalize()
+            .map_err(|e| Error::PathIo(path.to_path_buf(), e.to_string()))?;
+        project::import(path)?;
+    }
+
     // NOTE: this channel must be `std::sync::mpsc` as the window
     // NOTE: must run on the main thread (MacOS)
     let (tx, rx) = std::sync::mpsc::channel::<ConnectionInfo>();
@@ -38,8 +48,6 @@ pub fn run(args: &Editor) -> Result<()> {
 
     // Channel used to shutdown all child worker processes
     let (shutdown_tx, shutdown_rx) = tokio::sync::oneshot::channel::<()>();
-
-    let is_project_editor = args.project.is_some();
 
     // WARN: We cannot launch the window directly from the server
     // WARN: callback otherwise it's event loop and the tokio runtime
