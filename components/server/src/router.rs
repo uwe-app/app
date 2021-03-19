@@ -314,7 +314,7 @@ async fn start(
                             while let Ok(m) = live_reload_rx.recv().await {
                                 match m {
                                     Message::Text(message) => {
-                                        println!("Watch thread got notification {:?}", message);
+                                        //println!("Watch thread got notification {:?}", message);
                                         broadcast_server.do_send(
                                             reload_server::Message(message),
                                         );
@@ -357,7 +357,7 @@ async fn start(
                                 .header(header::ACCESS_CONTROL_MAX_AGE, "86400")
                                 .header(header::ACCESS_CONTROL_ALLOW_ORIGIN, "*")
                                 .header(header::ACCESS_CONTROL_ALLOW_HEADERS, "Depth, Content-Type")
-                                .header(header::ACCESS_CONTROL_ALLOW_METHODS, "POST, GET, OPTIONS, PUT, PATCH, PROPFIND")
+                                .header(header::ACCESS_CONTROL_ALLOW_METHODS, "POST, GET, OPTIONS, PUT, PATCH, PROPFIND, MKCOL")
                         )
                         .guard(guard::Host(host.name()))
                         .data(dav_server)
