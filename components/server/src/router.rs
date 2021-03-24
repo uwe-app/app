@@ -566,6 +566,7 @@ async fn start(
                                         let response = if err.exists() {
                                             match NamedFile::open(err) {
                                                 Ok(file) => {
+                                                    let file = file.set_status_code(StatusCode::NOT_FOUND);
                                                     file.into_response(&http_req)
                                                 }
                                                 Err(e) => {
