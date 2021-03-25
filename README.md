@@ -190,13 +190,13 @@ Create a content distribution network:
 * `<s3-bucket-endpoint>` The S3 bucket endpoint returned when the bucket was created, should include a leading `http://` scheme (eg: `http://example.com.s3-website-ap-southeast-1.amazonaws.com`).
 
 ```
-web-host cdn create \
+web-host cdn upsert \
+  <s3-bucket-endpoint> \
   --credentials=<credentials> \
   --origin-id=example-com \
   --alias=example.com \
   --protocol-policy=redirect-to-https \
-  --acm-certificate-arn=<acm-certificate-arn> \
-  <s3-bucket-endpoint>
+  --acm-certificate-arn=<acm-certificate-arn>
 ```
 
 ### Create the DNS Record(s)
