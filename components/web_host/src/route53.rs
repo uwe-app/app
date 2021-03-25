@@ -104,7 +104,12 @@ impl Into<ResourceRecordSet> for DnsRecord {
             self.value
         };
 
-        let ttl: Option<i64> = self.ttl.clone();
+        // NOTE: aliases do not accept a TTL value!
+        let ttl: Option<i64> = if let Some(_) = self.alias {
+            None
+        } else {
+            self.ttl.clone()
+        };
 
         let (alias_target, resource_records) =
             if let Some(hosted_zone_id) = self.alias {
@@ -356,6 +361,7 @@ impl DnsSettings {
             .map(|record| (ChangeAction::Upsert, record.into()))
             .collect();
         let req = self.into_change_set(changes);
+
         Ok(client.change_resource_record_sets(req).await?)
     }
 
