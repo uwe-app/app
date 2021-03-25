@@ -221,7 +221,10 @@ async fn start(
 
         if host.require_index() {
             let index_page = host.directory().join(config::INDEX_HTML);
-            if !index_page.exists() || !index_page.is_file() {
+            let has_root_redirect = if let Some(ref redirects) = host.redirects() {
+                redirects.items().contains_key("/")
+            } else { false };
+            if (!index_page.exists() || !index_page.is_file()) && !has_root_redirect {
                 return Err(Error::NoIndexFile(
                     host.name().to_string(),
                     index_page,
