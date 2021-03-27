@@ -531,23 +531,31 @@ async fn start(
                         })
                         // Always add these headers
                         .wrap(
-                            DefaultHeaders::new()
-                                .header(
-                                    header::SERVER,
-                                    config::generator::user_agent(),
-                                )
-                                .header(header::REFERRER_POLICY, "origin")
-                                .header(header::X_CONTENT_TYPE_OPTIONS, "nosniff")
-                                .header(header::X_XSS_PROTECTION, "1; mode=block")
+                            {
+                                let mut headers = DefaultHeaders::new()
+                                    .header(
+                                        header::SERVER,
+                                        config::generator::user_agent(),
+                                    )
+                                    .header(header::REFERRER_POLICY, "origin")
+                                    .header(header::X_CONTENT_TYPE_OPTIONS, "nosniff")
+                                    .header(header::X_XSS_PROTECTION, "1; mode=block")
 
-                                /*
-                                .header(
-                                    header::STRICT_TRANSPORT_SECURITY,
-                                    "max-age=31536000; includeSubDomains; preload",
-                                )
-                                */
-                                // TODO: allow configuring this header
-                                .header("permissions-policy", "geolocation=()"),
+                                    /*
+                                    .header(
+                                        header::STRICT_TRANSPORT_SECURITY,
+                                        "max-age=31536000; includeSubDomains; preload",
+                                    )
+                                    */
+                                    // TODO: allow configuring this header
+                                    .header("permissions-policy", "geolocation=()");
+
+                                if watch {
+                                    headers = headers.header(header::ACCESS_CONTROL_ALLOW_ORIGIN, "*");
+                                }
+
+                                headers
+                            }
                         )
                         // Check virtual hosts
                         .guard(guard::fn_guard(move |req| {
