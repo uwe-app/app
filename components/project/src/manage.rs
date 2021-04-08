@@ -1,4 +1,5 @@
 use std::collections::HashSet;
+use std::hash::{Hash, Hasher};
 use std::path::{Path, PathBuf};
 use std::sync::RwLock;
 
@@ -42,11 +43,24 @@ pub struct ProjectManifest {
 }
 
 #[derive(
-    Debug, Serialize, Deserialize, Clone, Eq, PartialEq, Hash, Ord, PartialOrd,
+    Debug, Serialize, Deserialize, Clone, Eq, Ord, PartialOrd,
 )]
 pub struct ProjectManifestEntry {
     pub id: Option<String>,
     pub path: PathBuf,
+    pub name: Option<String>,
+}
+
+impl Hash for ProjectManifestEntry {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.path.hash(state);
+    }
+}
+
+impl PartialEq for ProjectManifestEntry {
+    fn eq(&self, other: &Self) -> bool {
+        self.path == other.path
+    }
 }
 
 #[derive(
@@ -169,9 +183,15 @@ pub fn list() -> Result<ProjectList> {
         } else {
             SettingsStatus::Missing
         };
+        let mut entry = entry.clone();
+        if entry.name.is_none() {
+            entry.name = entry.path
+                .file_name()
+                .map(|s| s.to_string_lossy().into_owned());
+        }
         let item = ProjectStatus {
             status,
-            entry: entry.clone(),
+            entry,
         };
         projects.push(item);
     }
@@ -197,9 +217,11 @@ pub fn exists<P: AsRef<Path>>(path: P) -> bool {
 pub fn import<P: AsRef<Path>>(path: P) -> Result<()> {
     let exists = exists(path.as_ref());
     if !exists {
+        let name = path.as_ref().file_name().map(|s| s.to_string_lossy().into_owned());
         let entry = ProjectManifestEntry {
             id: Some(crate::checksum(path.as_ref()).unwrap()),
             path: path.as_ref().to_path_buf(),
+            name,
         };
         add(entry)?;
     }

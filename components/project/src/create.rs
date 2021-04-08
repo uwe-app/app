@@ -432,9 +432,11 @@ pub async fn create(
 
     let path = target.to_string_lossy().into_owned();
     let id = Some(crate::checksum(&path)?);
+    let name = target.file_name().map(|s| s.to_string_lossy().into_owned());
     let entry = ProjectManifestEntry {
         id,
         path: PathBuf::from(&path),
+        name,
     };
 
     Ok(entry)
