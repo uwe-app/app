@@ -419,6 +419,8 @@ pub async fn create(
         true
     })?;
 
+    let host = settings.host.clone().map(|s| s.to_string());
+
     write_settings(&target, settings, name, dependency, plugin)?;
 
     if !options.bare {
@@ -437,6 +439,7 @@ pub async fn create(
         id,
         path: PathBuf::from(&path),
         name,
+        host,
     };
 
     Ok(entry)

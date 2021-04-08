@@ -49,6 +49,7 @@ pub struct ProjectManifestEntry {
     pub id: Option<String>,
     pub path: PathBuf,
     pub name: Option<String>,
+    pub host: Option<String>,
 }
 
 impl Hash for ProjectManifestEntry {
@@ -174,20 +175,22 @@ pub fn list() -> Result<ProjectList> {
         Vec::with_capacity(manifest.project.len());
 
     for entry in manifest.project.iter() {
-        let settings_file = entry.path.join(config::SITE_TOML);
-        let status = if settings_file.exists() {
-            match Config::load(&entry.path, false) {
-                Ok(_) => SettingsStatus::Ok,
-                Err(_) => SettingsStatus::Error,
-            }
+        let (status, settings) = if !entry.path.exists() || !entry.path.is_dir() {
+            (SettingsStatus::Missing, None)
         } else {
-            SettingsStatus::Missing
+            match Config::load(&entry.path, false) {
+                Ok(settings) => (SettingsStatus::Ok, Some(settings)),
+                Err(_) => (SettingsStatus::Error, None),
+            }
         };
         let mut entry = entry.clone();
         if entry.name.is_none() {
             entry.name = entry.path
                 .file_name()
                 .map(|s| s.to_string_lossy().into_owned());
+        }
+        if let Some(settings) = settings {
+            entry.host = Some(settings.host().to_string());
         }
         let item = ProjectStatus {
             status,
@@ -222,6 +225,7 @@ pub fn import<P: AsRef<Path>>(path: P) -> Result<()> {
             id: Some(crate::checksum(path.as_ref()).unwrap()),
             path: path.as_ref().to_path_buf(),
             name,
+            host: None,
         };
         add(entry)?;
     }
