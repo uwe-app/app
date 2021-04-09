@@ -155,6 +155,24 @@ impl Service for ProjectService {
             } else {
                 return Err((req, "Method expects parameters").into());
             }
+        } else if req.matches("project.open-browser") {
+            let mut params: Vec<String> = req.deserialize()?;
+            if params.len() == 2 {
+                let id = params.swap_remove(0);
+                let worker_id = params.swap_remove(0);
+                let entry = project::find(&id).map_err(Box::from)?;
+                if let Some(_) = entry {
+                    let servers = project_servers().read().unwrap();
+                    if let Some(info) = servers.get(&worker_id) {
+                        open::that(info.url()).map(|_| ()).unwrap_or(());
+                    }
+                } else {
+                    return Err((req, "Project not found").into());
+                };
+
+            } else {
+                return Err((req, "Method expects exactly two parameters").into());
+            }
         } else if req.matches("project.find") {
             let mut params: Vec<String> = req.deserialize()?;
             if !params.is_empty() {

@@ -5539,6 +5539,7 @@ dependencies = [
  "json-rpc2",
  "log",
  "once_cell",
+ "open",
  "project",
  "psup-impl",
  "psup-json-rpc",
