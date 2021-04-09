@@ -100,6 +100,7 @@ pub async fn install(config: &Config) -> Result<ResolvedPlugins> {
 
                 let lock_plugin = &plugin;
                 let lock_entry: LockFileEntry = lock_plugin.try_into()?;
+
                 lock_installed.package.insert(lock_entry);
 
                 info!("Installed {}", plugin);

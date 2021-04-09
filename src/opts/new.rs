@@ -2,7 +2,6 @@ use std::path::PathBuf;
 
 use config::href::UrlPath;
 use structopt::StructOpt;
-use url::Url;
 
 #[derive(StructOpt, Debug)]
 pub struct New {
@@ -36,7 +35,7 @@ pub struct New {
 
     /// Create project from a git blueprint
     #[structopt(short, long)]
-    pub git: Option<Url>,
+    pub git: Option<String>,
 
     /// Folder prefix for git blueprints.
     #[structopt(long)]

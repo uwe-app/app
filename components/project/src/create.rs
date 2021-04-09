@@ -5,7 +5,6 @@ use std::path::PathBuf;
 use log::info;
 use toml::map::Map;
 use toml::value::{Table, Value};
-use url::Url;
 
 use utils::walk;
 
@@ -29,14 +28,14 @@ const REMOVE: [&str; 3] = [".ignore", "plugin.orig.toml", "plugin.toml"];
 #[derive(Debug)]
 pub enum ProjectSource {
     Plugin(String),
-    Git(Url, Option<UrlPath>),
+    Git(String, Option<UrlPath>),
     Path(PathBuf),
 }
 
 #[derive(Debug, Default)]
 pub struct ProjectOptions {
     pub source: Option<String>,
-    pub git: Option<Url>,
+    pub git: Option<String>,
     pub prefix: Option<UrlPath>,
     pub path: Option<PathBuf>,
     pub target: PathBuf,

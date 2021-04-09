@@ -30,6 +30,11 @@ pub enum Error {
     FromAbsolute(PathBuf),
 
     #[error(
+        "Failed to parse git URL: {0} ({1})"
+    )]
+    GitUrlParseFail(String, String),
+
+    #[error(
         "Dependency {0} wants the feature {1} but the feature is not available"
     )]
     NoFeature(String, String),

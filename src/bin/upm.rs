@@ -6,7 +6,6 @@ use std::path::PathBuf;
 use log::info;
 use semver::Version;
 use structopt::StructOpt;
-use url::Url;
 
 use uwe::{self, fatal, opts, Error, Result};
 
@@ -180,7 +179,7 @@ enum Command {
 
         /// URL for a git repository.
         #[structopt(short, long)]
-        git: Option<Url>,
+        git: Option<String>,
 
         /// Folder prefix for git repositories.
         #[structopt(long)]

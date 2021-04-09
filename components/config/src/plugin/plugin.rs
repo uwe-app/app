@@ -28,7 +28,7 @@ pub type PluginMap = HashMap<String, Plugin>;
 pub enum PluginSource {
     File(PathBuf),
     Archive(PathBuf),
-    Repo(Url),
+    Repo(String),
     Local(String),
     Registry(Url),
 }
@@ -42,7 +42,10 @@ impl TryInto<Url> for PluginSource {
                 let href = format!("file:{}", path.display());
                 Ok(href.parse::<Url>()?)
             }
-            Self::Repo(url) => Ok(url),
+            Self::Repo(url) => {
+                Ok(git_url_parse::normalize_url(&url)
+                    .map_err(|e| crate::Error::GitUrlParseFail(url, e.to_string()))?)
+            },
             Self::Registry(url) => Ok(url),
             Self::Archive(ref path) => {
                 let url_target = format!(

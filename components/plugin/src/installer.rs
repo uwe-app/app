@@ -4,7 +4,6 @@ use std::path::{Path, PathBuf};
 use futures::TryFutureExt;
 use log::debug;
 use sha3::{Digest, Sha3_256};
-use url::Url;
 
 use config::{
     dependency::{Dependency, DependencyTarget},
@@ -237,21 +236,21 @@ pub async fn install_archive<P: AsRef<Path>, F: AsRef<Path>>(
 
 pub async fn install_repo<P: AsRef<Path>>(
     project: P,
-    scm_url: &Url,
+    scm_url: &str,
     prefix: &Option<UrlPath>,
     force: bool,
 ) -> Result<Plugin> {
-    let scm_url_str = scm_url.to_string();
+    //let scm_url_str = scm_url.to_string();
     let repos_dir = dirs::repositories_dir()?;
     let mut hasher = Sha3_256::new();
-    hasher.update(scm_url_str.as_bytes());
+    hasher.update(scm_url.as_bytes());
     let scm_id = hex::encode(hasher.finalize().as_slice().to_owned());
 
     let mut repo_path = repos_dir.join(scm_id);
     debug!("Install repository {}", repo_path.display());
-    scm::clone_or_fetch(&scm_url_str, &repo_path)?;
+    scm::clone_or_fetch(scm_url, &repo_path)?;
 
-    let source = Some(PluginSource::Repo(scm_url.clone()));
+    let source = Some(PluginSource::Repo(scm_url.to_string()));
 
     // Update the repo path to include a prefix when available
     // so we install the plugin from the correct folder

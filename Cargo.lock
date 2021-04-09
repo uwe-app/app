@@ -936,6 +936,7 @@ dependencies = [
  "chrono",
  "dirs",
  "dyn-clone",
+ "git-url-parse",
  "globset",
  "http",
  "indexmap",
@@ -1968,6 +1969,20 @@ dependencies = [
  "libc",
  "system-deps",
  "winapi 0.3.9",
+]
+
+[[package]]
+name = "git-url-parse"
+version = "0.3.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ad6e3b1adb6fd23071df9ec0d5042636daff11333e8bcd7ed3d1dd7ad4f964a9"
+dependencies = [
+ "anyhow",
+ "log",
+ "regex",
+ "strum 0.20.0",
+ "strum_macros 0.20.1",
+ "url",
 ]
 
 [[package]]
@@ -5035,6 +5050,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "57bd81eb48f4c437cadc685403cad539345bf703d78e63707418431cecd4522b"
 
 [[package]]
+name = "strum"
+version = "0.20.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7318c509b5ba57f18533982607f24070a55d353e90d4cae30c467cdb2ad5ac5c"
+
+[[package]]
 name = "strum_macros"
 version = "0.18.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -5125,7 +5146,7 @@ checksum = "0f3ecc17269a19353b3558b313bba738b25d82993e30d62a18406a24aba4649b"
 dependencies = [
  "heck",
  "pkg-config",
- "strum",
+ "strum 0.18.0",
  "strum_macros 0.18.0",
  "thiserror",
  "toml",

@@ -5,7 +5,6 @@ use std::path::PathBuf;
 use human_bytes::human_bytes;
 use log::{debug, info};
 use semver::VersionReq;
-use url::Url;
 
 use config::{
     href::UrlPath,
@@ -144,7 +143,7 @@ pub async fn add(
     plugin_name: Option<ExactPluginSpec>,
     mut path: Option<PathBuf>,
     mut archive: Option<PathBuf>,
-    mut git: Option<Url>,
+    mut git: Option<String>,
     prefix: Option<UrlPath>,
     force: bool,
 ) -> Result<()> {

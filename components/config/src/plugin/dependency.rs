@@ -8,7 +8,6 @@ use globset::{Glob, GlobMatcher};
 use semver::VersionReq;
 use serde::{Deserialize, Serialize};
 use serde_with::{serde_as, DisplayFromStr};
-use url::Url;
 
 use crate::{utils::href::UrlPath, Error, Result};
 
@@ -53,7 +52,7 @@ pub enum DependencyDefinition {
 
 impl Default for DependencyDefinition {
     fn default() -> Self {
-        Self::VersionRange(String::new())
+        Self::VersionRange(String::from("^1"))
     }
 }
 
@@ -200,7 +199,6 @@ impl DependencyMap {
     }
 }
 
-#[serde_as]
 #[derive(Debug, Serialize, Deserialize, Clone, Eq, PartialEq)]
 #[serde(untagged)]
 pub enum DependencyTarget {
@@ -210,8 +208,7 @@ pub enum DependencyTarget {
     Archive { archive: PathBuf },
     /// Load plugin from a git repository.
     Repo {
-        #[serde_as(as = "DisplayFromStr")]
-        git: Url,
+        git: String,
         prefix: Option<UrlPath>,
     },
     /// Load plugin from a local scope.
@@ -230,12 +227,12 @@ pub struct Dependency {
     /// be activated via a feature flag.
     pub optional: Option<bool>,
 
-    #[serde(flatten)]
-    pub features: Option<FeatureFlags>,
-
     /// Optional target such as a folder, archive or git repository.
     #[serde(flatten)]
     pub target: Option<DependencyTarget>,
+
+    #[serde(flatten)]
+    pub features: Option<FeatureFlags>,
 
     /// Patterns that determine how styles, scripts and layouts
     /// are applied to pages.
