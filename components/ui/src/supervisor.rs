@@ -3,27 +3,27 @@ use std::path::PathBuf;
 use std::sync::{Arc, RwLock};
 
 use log::{info, warn};
-use tokio::sync::{oneshot, mpsc, Mutex};
+use tokio::sync::{mpsc, oneshot, Mutex};
 
 use async_trait::async_trait;
 use json_rpc2::{
     futures::{Server, Service},
     Request, Response,
 };
-use psup_impl::{id, Supervisor, SupervisorBuilder, Message};
-use psup_json_rpc::serve;
 use once_cell::sync::OnceCell;
+use psup_impl::{id, Message, Supervisor, SupervisorBuilder};
+use psup_json_rpc::serve;
 
 use crate::Result;
 use config::server::ConnectionInfo;
 use project::ConnectionBridge;
 
 /// Store the web server connection info for each supervised process.
-pub(crate) fn project_servers() -> &'static RwLock<HashMap<String, ConnectionInfo>> {
-    static INSTANCE: OnceCell<RwLock<HashMap<String, ConnectionInfo>>> = OnceCell::new();
-    INSTANCE.get_or_init(|| {
-        RwLock::new(HashMap::new())
-    })
+pub(crate) fn project_servers(
+) -> &'static RwLock<HashMap<String, ConnectionInfo>> {
+    static INSTANCE: OnceCell<RwLock<HashMap<String, ConnectionInfo>>> =
+        OnceCell::new();
+    INSTANCE.get_or_init(|| RwLock::new(HashMap::new()))
 }
 
 #[derive(Debug)]
@@ -44,8 +44,13 @@ impl SocketFile {
 
 #[derive(Debug)]
 pub enum ProcessMessage {
-    OpenProject { path: String, reply: oneshot::Sender<String> },
-    CloseProject { worker_id: String },
+    OpenProject {
+        path: String,
+        reply: oneshot::Sender<String>,
+    },
+    CloseProject {
+        worker_id: String,
+    },
 }
 
 struct SupervisorService;

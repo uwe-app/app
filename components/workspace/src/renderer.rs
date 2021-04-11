@@ -15,6 +15,7 @@ use compiler::{
 };
 use config::{
     hook::HookConfig,
+    plugin::dependency::DependencyTarget,
     profile::Profiles,
     sitemap::{SiteMapEntry, SiteMapFile, SiteMapIndex},
 };
@@ -147,7 +148,9 @@ impl Renderer {
                 // WARN: Must test the file path is a valid page before reloading data
                 // WARN: otherwise binary files may be treated as pages and we would
                 // WARN: inadvertently try to parse front matter from a binary file!
-                if render_options.reload_data && options.has_parse_file_match(path, types) {
+                if render_options.reload_data
+                    && options.has_parse_file_match(path, types)
+                {
                     self.reload(path)?;
                 }
                 self.one(parser, path).await?;
@@ -458,10 +461,52 @@ impl Renderer {
 
         let filters = &self.info.sources.filters;
         let plugin_cache = config::plugins_dir()?;
+        let plugin_repositories = dirs::repositories_dir()?;
+        let plugin_archives = dirs::archives_dir()?;
+
+        // Collect plugins with paths so we can enusre they are not 
+        // filtered from the collated files to compile
+        let plugin_paths: Vec<PathBuf> = if let Some(ref plugin_cache) = self.info.context.plugins {
+            plugin_cache
+                .plugins()
+                .iter()
+                .filter(|(dep, _)| {
+                    if let Some(target) = dep.target() {
+                        match target {
+                            DependencyTarget::File { .. } => true,
+                            _ => false 
+                        } 
+                    } else { false }
+                })
+                .map(|(dep, plugin)| {
+                    let target = dep.target().as_ref().unwrap();
+                    match target {
+                        DependencyTarget::File { ref path } => {
+                            // WARN: Assume the plugin logic has already 
+                            // WARN: verified the path is available!
+                            plugin.base().join(path).canonicalize().unwrap()
+                        }
+                        _ => panic!("Plugin path filter was not configured correctly"),
+                    } 
+                })
+                .collect::<Vec<_>>()
+        } else {
+            Vec::new() 
+        };
+
         let path_filter = |p: &&Arc<PathBuf>| -> bool {
-            // Always allow plugin assets
-            if p.starts_with(&plugin_cache) {
+            // Always allow plugin assets event when path filters are given
+            if p.starts_with(&plugin_cache)
+                || p.starts_with(&plugin_repositories)
+                || p.starts_with(&plugin_archives)
+            {
                 return true;
+            }
+
+            for local_plugin in &plugin_paths {
+                if p.starts_with(local_plugin) {
+                    return true;
+                }
             }
 
             if let Some(ref filters) = filters {
@@ -478,6 +523,7 @@ impl Renderer {
         };
 
         let filter = |p: &&Arc<PathBuf>| -> bool {
+
             let filtered = path_filter(p);
             if filtered && is_incremental {
                 return manifest_filter(p);

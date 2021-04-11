@@ -69,7 +69,7 @@ mod manage;
 pub use bridge::ConnectionBridge;
 pub use create::{create, ProjectOptions};
 pub use manage::{
-    add, find, list, load, remove, import, ProjectList, ProjectManifestEntry,
+    add, find, import, list, load, remove, ProjectList, ProjectManifestEntry,
 };
 
 /// Compute the SHA3-256 checksum of a project path.

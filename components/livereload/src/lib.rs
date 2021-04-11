@@ -20,8 +20,7 @@ fn get_script(endpoint: &str) -> String {
     if let Some(host) = ws_host {
         script.push_str(&format!(
             "const socket = new WebSocket('{}/{}');\n",
-            host,
-            endpoint
+            host, endpoint
         ));
     } else {
         // Setup the websocket connection.

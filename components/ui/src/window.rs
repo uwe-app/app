@@ -100,7 +100,7 @@ pub fn window(url: String, ps_tx: Sender<ProcessMessage>) -> crate::Result<()> {
     });
 
     let width = 960f64;
-    let height= 540f64;
+    let height = 540f64;
 
     let attrs = Attributes {
         url: Some(url),

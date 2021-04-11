@@ -23,7 +23,8 @@ async fn serve_project(
     settings.member = args.member;
     settings.include_drafts = Some(args.include_drafts);
 
-    let result = compile(&project, &settings, Default::default(), false).await?;
+    let result =
+        compile(&project, &settings, Default::default(), false).await?;
 
     let host_result: HostResult = result.into();
     let mut host_configs: Vec<(HostInfo, HostConfig)> =

@@ -29,9 +29,7 @@ pub enum Error {
     #[error("Collections `from` path {0} may not be absolute")]
     FromAbsolute(PathBuf),
 
-    #[error(
-        "Failed to parse git URL: {0} ({1})"
-    )]
+    #[error("Failed to parse git URL: {0} ({1})")]
     GitUrlParseFail(String, String),
 
     #[error(

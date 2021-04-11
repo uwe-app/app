@@ -18,8 +18,8 @@ pub async fn run<P: AsRef<Path>>(
     args.live = Some(true);
 
     // Compile the project
-    let result = workspace::compile(
-        project, &args, Default::default(), true).await?;
+    let result =
+        workspace::compile(project, &args, Default::default(), true).await?;
 
     // Start the webserver
     server::watch(

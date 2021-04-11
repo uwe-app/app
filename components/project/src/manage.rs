@@ -42,9 +42,7 @@ pub struct ProjectManifest {
     pub project: HashSet<ProjectManifestEntry>,
 }
 
-#[derive(
-    Debug, Serialize, Deserialize, Clone, Eq, Ord, PartialOrd,
-)]
+#[derive(Debug, Serialize, Deserialize, Clone, Eq, Ord, PartialOrd)]
 pub struct ProjectManifestEntry {
     pub id: Option<String>,
     pub path: PathBuf,
@@ -175,7 +173,8 @@ pub fn list() -> Result<ProjectList> {
         Vec::with_capacity(manifest.project.len());
 
     for entry in manifest.project.iter() {
-        let (status, settings) = if !entry.path.exists() || !entry.path.is_dir() {
+        let (status, settings) = if !entry.path.exists() || !entry.path.is_dir()
+        {
             (SettingsStatus::Missing, None)
         } else {
             match Config::load(&entry.path, false) {
@@ -185,17 +184,15 @@ pub fn list() -> Result<ProjectList> {
         };
         let mut entry = entry.clone();
         if entry.name.is_none() {
-            entry.name = entry.path
+            entry.name = entry
+                .path
                 .file_name()
                 .map(|s| s.to_string_lossy().into_owned());
         }
         if let Some(settings) = settings {
             entry.host = Some(settings.host().to_string());
         }
-        let item = ProjectStatus {
-            status,
-            entry,
-        };
+        let item = ProjectStatus { status, entry };
         projects.push(item);
     }
 
@@ -220,7 +217,10 @@ pub fn exists<P: AsRef<Path>>(path: P) -> bool {
 pub fn import<P: AsRef<Path>>(path: P) -> Result<()> {
     let exists = exists(path.as_ref());
     if !exists {
-        let name = path.as_ref().file_name().map(|s| s.to_string_lossy().into_owned());
+        let name = path
+            .as_ref()
+            .file_name()
+            .map(|s| s.to_string_lossy().into_owned());
         let entry = ProjectManifestEntry {
             id: Some(crate::checksum(path.as_ref()).unwrap()),
             path: path.as_ref().to_path_buf(),

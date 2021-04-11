@@ -43,9 +43,10 @@ impl TryInto<Url> for PluginSource {
                 Ok(href.parse::<Url>()?)
             }
             Self::Repo(url) => {
-                Ok(git_url_parse::normalize_url(&url)
-                    .map_err(|e| crate::Error::GitUrlParseFail(url, e.to_string()))?)
-            },
+                Ok(git_url_parse::normalize_url(&url).map_err(|e| {
+                    crate::Error::GitUrlParseFail(url, e.to_string())
+                })?)
+            }
             Self::Registry(url) => Ok(url),
             Self::Archive(ref path) => {
                 let url_target = format!(

@@ -1,14 +1,14 @@
 use std::path::PathBuf;
 
-use serde::{Deserialize, Serialize};
-use serde_json::Value;
-use wry::WindowProxy;
 use async_trait::async_trait;
 use json_rpc2::{futures::*, Request, Response, Result};
 use log::{error, info, warn};
+use serde::{Deserialize, Serialize};
+use serde_json::Value;
 use tokio::sync::mpsc::Sender;
+use wry::WindowProxy;
 
-use crate::{ProcessMessage, supervisor::project_servers};
+use crate::{supervisor::project_servers, ProcessMessage};
 use project::{ProjectList, ProjectManifestEntry};
 
 pub struct ServiceData {
@@ -125,7 +125,8 @@ impl Service for ProjectService {
                 let worker_id = params.swap_remove(0);
                 let servers = project_servers().read().unwrap();
                 if let Some(info) = servers.get(&worker_id) {
-                    let value = serde_json::to_value(info).map_err(Box::from)?;
+                    let value =
+                        serde_json::to_value(info).map_err(Box::from)?;
                     response = Some((req, value).into());
                 } else {
                     response = Some(req.into());
@@ -169,9 +170,10 @@ impl Service for ProjectService {
                 } else {
                     return Err((req, "Project not found").into());
                 };
-
             } else {
-                return Err((req, "Method expects exactly two parameters").into());
+                return Err(
+                    (req, "Method expects exactly two parameters").into()
+                );
             }
         } else if req.matches("project.find") {
             let mut params: Vec<String> = req.deserialize()?;

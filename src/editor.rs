@@ -1,5 +1,5 @@
-use std::collections::HashMap;
 use log::{info, warn};
+use std::collections::HashMap;
 use std::path::PathBuf;
 
 use crate::{opts::Editor, Error, Result};
@@ -31,7 +31,8 @@ pub fn run(args: &Editor) -> Result<()> {
 
     // Import a project if we need to
     if let Some(ref path) = args.project {
-        let path = path.canonicalize()
+        let path = path
+            .canonicalize()
             .map_err(|e| Error::PathIo(path.to_path_buf(), e.to_string()))?;
         project::import(path)?;
     }

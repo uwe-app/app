@@ -3,7 +3,7 @@ use std::convert::TryInto;
 use std::sync::{Arc, RwLock};
 use std::time::{Duration, SystemTime};
 
-use log::{error, info, debug};
+use log::{debug, error, info};
 
 use futures_util::FutureExt;
 use notify::{RecommendedWatcher, RecursiveMode, Watcher};
@@ -16,7 +16,9 @@ use tokio::sync::{
 };
 use url::Url;
 
-use config::server::{ConnectionInfo, HostConfig, ServerConfig, SslConfig, WebDavConfig};
+use config::server::{
+    ConnectionInfo, HostConfig, ServerConfig, SslConfig, WebDavConfig,
+};
 
 use workspace::{CompileResult, HostInfo, HostResult, Invalidator};
 

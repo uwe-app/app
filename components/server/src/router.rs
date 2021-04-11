@@ -97,10 +97,7 @@ async fn dav_handler(
     }
 }
 
-async fn preflight(
-    req: HttpRequest,
-) -> HttpResponse {
-
+async fn preflight(req: HttpRequest) -> HttpResponse {
     /*
     println!("Got pre-flight {:?}", req.path());
     println!("Got pre-flight {:#?}", req.headers().get(header::ACCESS_CONTROL_REQUEST_HEADERS));
@@ -113,11 +110,15 @@ async fn preflight(
         builder.insert_header((header::ACCESS_CONTROL_ALLOW_ORIGIN, origin));
     }
 
-    if let Some(method) = req.headers().get(header::ACCESS_CONTROL_REQUEST_METHOD) {
+    if let Some(method) =
+        req.headers().get(header::ACCESS_CONTROL_REQUEST_METHOD)
+    {
         builder.insert_header((header::ACCESS_CONTROL_ALLOW_METHODS, method));
     }
 
-    if let Some(headers) = req.headers().get(header::ACCESS_CONTROL_REQUEST_HEADERS) {
+    if let Some(headers) =
+        req.headers().get(header::ACCESS_CONTROL_REQUEST_HEADERS)
+    {
         builder.insert_header((header::ACCESS_CONTROL_ALLOW_HEADERS, headers));
     }
 
@@ -221,10 +222,15 @@ async fn start(
 
         if host.require_index() {
             let index_page = host.directory().join(config::INDEX_HTML);
-            let has_root_redirect = if let Some(ref redirects) = host.redirects() {
-                redirects.items().contains_key("/")
-            } else { false };
-            if (!index_page.exists() || !index_page.is_file()) && !has_root_redirect {
+            let has_root_redirect =
+                if let Some(ref redirects) = host.redirects() {
+                    redirects.items().contains_key("/")
+                } else {
+                    false
+                };
+            if (!index_page.exists() || !index_page.is_file())
+                && !has_root_redirect
+            {
                 return Err(Error::NoIndexFile(
                     host.name().to_string(),
                     index_page,
@@ -239,7 +245,8 @@ async fn start(
 
         if let Some(ref endpoint) = host.endpoint() {
             info!("Websocket endpoint {}", endpoint);
-            host_connections.insert(host.name().to_string(), endpoint.to_string());
+            host_connections
+                .insert(host.name().to_string(), endpoint.to_string());
         }
 
         let virtual_host = VirtualHost {
@@ -709,7 +716,12 @@ async fn start(
     let bind_notify = async move {
         if !addrs.is_empty() {
             let addr = addrs.swap_remove(0);
-            let info = ConnectionInfo::new(addr, host, use_ssl, host_connections.clone());
+            let info = ConnectionInfo::new(
+                addr,
+                host,
+                use_ssl,
+                host_connections.clone(),
+            );
             match bind.send(info) {
                 Err(_) => {
                     warn!("Failed to send connection info on bind channel");

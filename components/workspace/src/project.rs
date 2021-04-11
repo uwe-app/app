@@ -536,6 +536,7 @@ impl ProjectBuilder {
                 locales: Arc::clone(&locales),
                 collections: Arc::clone(&collections),
                 context,
+                //plugins: plugins.clone(),
                 manifest: manifest.clone(),
             };
 
@@ -873,7 +874,9 @@ impl Into<HostResult> for CompileResult {
                 // NOTE: handling when live reload is enabled.
                 let endpoint = if live_reload {
                     Some(utils::generate_id(16))
-                } else { None };
+                } else {
+                    None
+                };
                 HostInfo {
                     name,
                     project,
