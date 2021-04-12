@@ -478,13 +478,14 @@ impl Renderer {
                         } 
                     } else { false }
                 })
-                .map(|(dep, plugin)| {
+                .map(|(dep, _)| {
                     let target = dep.target().as_ref().unwrap();
                     match target {
                         DependencyTarget::File { ref path } => {
+                            let base = self.info.context.config.project();
                             // WARN: Assume the plugin logic has already 
                             // WARN: verified the path is available!
-                            plugin.base().join(path).canonicalize().unwrap()
+                            base.join(path).canonicalize().unwrap()
                         }
                         _ => panic!("Plugin path filter was not configured correctly"),
                     } 
