@@ -1,0 +1,5 @@
+domain-name = "damianwilliamson.com"
+bucket-name = "damianwilliamson.com"
+region = ["ap-southeast-1"]
+redirect-bucket-name = "www.damianwilliamson.com"
+subject-alternative-names = ["*.damianwilliamson.com"]
