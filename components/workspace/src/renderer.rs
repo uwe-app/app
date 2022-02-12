@@ -464,9 +464,11 @@ impl Renderer {
         let plugin_repositories = dirs::repositories_dir()?;
         let plugin_archives = dirs::archives_dir()?;
 
-        // Collect plugins with paths so we can enusre they are not 
+        // Collect plugins with paths so we can enusre they are not
         // filtered from the collated files to compile
-        let plugin_paths: Vec<PathBuf> = if let Some(ref plugin_cache) = self.info.context.plugins {
+        let plugin_paths: Vec<PathBuf> = if let Some(ref plugin_cache) =
+            self.info.context.plugins
+        {
             plugin_cache
                 .plugins()
                 .iter()
@@ -474,25 +476,29 @@ impl Renderer {
                     if let Some(target) = dep.target() {
                         match target {
                             DependencyTarget::File { .. } => true,
-                            _ => false 
-                        } 
-                    } else { false }
+                            _ => false,
+                        }
+                    } else {
+                        false
+                    }
                 })
                 .map(|(dep, _)| {
                     let target = dep.target().as_ref().unwrap();
                     match target {
                         DependencyTarget::File { ref path } => {
                             let base = self.info.context.config.project();
-                            // WARN: Assume the plugin logic has already 
+                            // WARN: Assume the plugin logic has already
                             // WARN: verified the path is available!
                             base.join(path).canonicalize().unwrap()
                         }
-                        _ => panic!("Plugin path filter was not configured correctly"),
-                    } 
+                        _ => panic!(
+                            "Plugin path filter was not configured correctly"
+                        ),
+                    }
                 })
                 .collect::<Vec<_>>()
         } else {
-            Vec::new() 
+            Vec::new()
         };
 
         let path_filter = |p: &&Arc<PathBuf>| -> bool {
@@ -524,7 +530,6 @@ impl Renderer {
         };
 
         let filter = |p: &&Arc<PathBuf>| -> bool {
-
             let filtered = path_filter(p);
             if filtered && is_incremental {
                 return manifest_filter(p);

@@ -32,11 +32,12 @@ use actix_web::{
     middleware::{
         Compat, Condition, DefaultHeaders, Logger, NormalizePath, TrailingSlash,
     },
-    web, App, HttpRequest, HttpResponse, HttpServer,
+    web::{self, Data},
+    App, HttpRequest, HttpResponse, HttpServer,
 };
 
-use rustls_pemfile::{certs, pkcs8_private_keys};
 use rustls::{Certificate, PrivateKey, ServerConfig as TlsServerConfig};
+use rustls_pemfile::{certs, pkcs8_private_keys};
 
 use bracket::Registry;
 use log::{error, info, warn};
@@ -261,22 +262,26 @@ async fn start(
         "hosts": virtual_hosts,
     });
 
-    let default_index = registry.render("default_index", &data).unwrap();
-    let default_index = web::Data::new(IndexPage(default_index));
-
-    let default_not_found =
-        registry.render("default_not_found", &json!({})).unwrap();
-    let default_not_found = web::Data::new(NotFoundPage(default_not_found));
-
     let app_state = Arc::new(AtomicUsize::new(0));
     let reload_server = LiveReloadServer::new(app_state.clone()).start();
 
     let broadcast_started = Arc::new(Mutex::new(false));
 
     let server = HttpServer::new(move || {
+
+        let default_index = registry.render("default_index", &data).unwrap();
+        let default_index = Data::new(IndexPage(default_index));
+
+        let default_not_found =
+            registry.render("default_not_found", &json!({})).unwrap();
+        let default_not_found = Data::new(NotFoundPage(default_not_found));
+
+
         let mut app: App<_> = App::new()
-            .data(app_state.clone())
-            .data(reload_server.clone());
+            .app_data(default_index)
+            .app_data(default_not_found)
+            .app_data(Data::new(app_state.clone()))
+            .app_data(Data::new(reload_server.clone()));
 
         let broadcast_start = Arc::clone(&broadcast_started);
 
@@ -359,18 +364,18 @@ async fn start(
                         .wrap(
                             // Access-Control-Max-Age: 86400
                             DefaultHeaders::new()
-                                .header(
+                                .add((
                                     header::SERVER,
                                     config::generator::user_agent(),
-                                )
-                                .header(header::REFERRER_POLICY, "origin")
-                                .header(header::ACCESS_CONTROL_MAX_AGE, "86400")
-                                .header(header::ACCESS_CONTROL_ALLOW_ORIGIN, "*")
-                                .header(header::ACCESS_CONTROL_ALLOW_HEADERS, "Depth, Content-Type")
-                                .header(header::ACCESS_CONTROL_ALLOW_METHODS, "POST, GET, OPTIONS, PUT, PATCH, PROPFIND, MKCOL")
+                                ))
+                                .add((header::REFERRER_POLICY, "origin"))
+                                .add((header::ACCESS_CONTROL_MAX_AGE, "86400"))
+                                .add((header::ACCESS_CONTROL_ALLOW_ORIGIN, "*"))
+                                .add((header::ACCESS_CONTROL_ALLOW_HEADERS, "Depth, Content-Type"))
+                                .add((header::ACCESS_CONTROL_ALLOW_METHODS, "POST, GET, OPTIONS, PUT, PATCH, PROPFIND, MKCOL"))
                         )
                         .guard(guard::Host(host.name()))
-                        .data(dav_server)
+                        .app_data(Data::new(dav_server))
                         .route("/{tail:.*}", web::method(http::Method::OPTIONS).to(preflight))
                         .service(web::resource("/{tail:.*}").to(dav_handler)),
                 );
@@ -388,7 +393,7 @@ async fn start(
             if let Some(ref embedded) = host.embedded() {
                 app = app.service(
                     web::resource("/{tail:.*}")
-                        .data(embedded.clone())
+                        .app_data(Data::new(embedded.clone()))
                         .route(web::get().to(embedded_handler))
                 );
 
@@ -404,7 +409,7 @@ async fn start(
                 }
 
                 app = app.service(
-                    web::scope("/")
+                    web::scope("")
                         // Handle redirect mappings
                         .wrap_fn(move |req, srv| {
                             if let Some(uri) = redirects.items().get(req.path()) {
@@ -476,8 +481,10 @@ async fn start(
                                 Ok(res)
                             }
                         })
+
                         // Handle live rendering
                         .wrap_fn(move |req, srv| {
+
                             let mut href = if req.path().ends_with("/")
                                 || req.path().ends_with(".html")
                             {
@@ -538,13 +545,13 @@ async fn start(
                         .wrap(
                             {
                                 let mut headers = DefaultHeaders::new()
-                                    .header(
+                                    .add((
                                         header::SERVER,
                                         config::generator::user_agent(),
-                                    )
-                                    .header(header::REFERRER_POLICY, "origin")
-                                    .header(header::X_CONTENT_TYPE_OPTIONS, "nosniff")
-                                    .header(header::X_XSS_PROTECTION, "1; mode=block")
+                                    ))
+                                    .add((header::REFERRER_POLICY, "origin"))
+                                    .add((header::X_CONTENT_TYPE_OPTIONS, "nosniff"))
+                                    .add((header::X_XSS_PROTECTION, "1; mode=block"))
 
                                     /*
                                     .header(
@@ -553,15 +560,16 @@ async fn start(
                                     )
                                     */
                                     // TODO: allow configuring this header
-                                    .header("permissions-policy", "geolocation=()");
+                                    .add(("permissions-policy", "geolocation=()"));
 
                                 if watch {
-                                    headers = headers.header(header::ACCESS_CONTROL_ALLOW_ORIGIN, "*");
+                                    headers = headers.add((header::ACCESS_CONTROL_ALLOW_ORIGIN, "*"));
                                 }
 
                                 headers
                             }
                         )
+
                         // Check virtual hosts
                         .guard(guard::fn_guard(move |req| {
                             for g in host_guards.iter() {
@@ -574,7 +582,7 @@ async fn start(
                         .wrap(Condition::new(log, Compat::new(Logger::default())))
                         // Serve static files
                         .service(
-                            Files::new("", host.directory().to_path_buf())
+                            Files::new("/", host.directory().to_path_buf())
                                 .default_handler(move |req: ServiceRequest| {
                                     let err = error_page.clone();
                                     let (http_req, _payload) = req.into_parts();
@@ -612,11 +620,10 @@ async fn start(
             }
         }
 
-        // FIXME: restore default service!
-
-        /*
         app = app.default_service(
+            web::get().to(default_route)
 
+            /*
             // Show something when no virtual hosts match
             // for all requests that are not `GET`.
             web::resource("")
@@ -628,8 +635,8 @@ async fn start(
                         .guard(guard::Not(guard::Get()))
                         .to(HttpResponse::MethodNotAllowed),
                 ),
+            */
         );
-        */
 
         app
     })
@@ -650,10 +657,8 @@ async fn start(
                 .map_err(|_| Error::SslKeyFile(key.to_path_buf()))?,
         );
 
-        let cert_chain = certs(cert_file)?
-            .into_iter()
-            .map(Certificate)
-            .collect();
+        let cert_chain =
+            certs(cert_file)?.into_iter().map(Certificate).collect();
 
         let mut keys: Vec<PrivateKey> = pkcs8_private_keys(key_file)?
             .into_iter()
@@ -697,7 +702,7 @@ async fn start(
                     ok(req.into_response(
                         HttpResponse::MovedPermanently()
                             .append_header((http::header::LOCATION, url))
-                            .finish()
+                            .finish(),
                     ))
                 }));
                 app
