@@ -14,4 +14,4 @@ pbr = "1.0.4"
 
 [dependencies.git2]
 version = "0.13"
-features = ["vendored-openssl"]
+#features = ["vendored-openssl"]

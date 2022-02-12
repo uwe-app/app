@@ -111,7 +111,7 @@ pub fn window(url: String, ps_tx: Sender<ProcessMessage>) -> crate::Result<()> {
         //min_height: Some(height),
         ..Default::default()
     };
-    app.add_window_with_configs(attrs, Some(handler), None)?;
+    app.add_window_with_configs(attrs, Some(handler), None, None)?;
     app.run();
     Ok(())
 }

@@ -35,8 +35,8 @@ use actix_web::{
     web, App, HttpRequest, HttpResponse, HttpServer,
 };
 
-use rustls::internal::pemfile::{certs, pkcs8_private_keys};
-use rustls::{NoClientAuth, ServerConfig as TlsServerConfig};
+use rustls_pemfile::{certs, pkcs8_private_keys};
+use rustls::{Certificate, PrivateKey, ServerConfig as TlsServerConfig};
 
 use bracket::Registry;
 use log::{error, info, warn};
@@ -158,11 +158,11 @@ async fn default_route(
     if req.path() == "" || req.path() == "/" || req.path() == "/index.html" {
         HttpResponse::Ok()
             .content_type("text/html")
-            .body(&index_page.0)
+            .body(index_page.0.to_string())
     } else {
         HttpResponse::NotFound()
             .content_type("text/html")
-            .body(&not_found_page.0)
+            .body(not_found_page.0.to_string())
     }
 }
 
@@ -274,7 +274,7 @@ async fn start(
     let broadcast_started = Arc::new(Mutex::new(false));
 
     let server = HttpServer::new(move || {
-        let mut app: App<_, _> = App::new()
+        let mut app: App<_> = App::new()
             .data(app_state.clone())
             .data(reload_server.clone());
 
@@ -427,7 +427,6 @@ async fn start(
                                                 location,
                                             ))
                                             .finish()
-                                            .into_body()
                                     } else {
                                         HttpResponse::PermanentRedirect()
                                             .append_header((
@@ -435,7 +434,6 @@ async fn start(
                                                 location,
                                             ))
                                             .finish()
-                                            .into_body()
                                     };
 
                                     Ok(req.into_response(redirect))
@@ -638,7 +636,6 @@ async fn start(
         let cert = ssl_config.cert();
         let key = ssl_config.key();
 
-        let mut config = TlsServerConfig::new(NoClientAuth::new());
         let cert_file = &mut BufReader::new(
             File::open(cert)
                 .map_err(|_| Error::SslCertFile(cert.to_path_buf()))?,
@@ -647,22 +644,40 @@ async fn start(
             File::open(key)
                 .map_err(|_| Error::SslKeyFile(key.to_path_buf()))?,
         );
+
+        /*
         let cert_chain = certs(cert_file)
             .map_err(|_| Error::SslCertChain(cert.to_path_buf()))?;
 
         let mut keys = pkcs8_private_keys(key_file)
             .map_err(|_| Error::SslPrivateKey(key.to_path_buf()))?;
+        */
+
+        let cert_chain = certs(cert_file)
+            .unwrap()
+            .into_iter()
+            .map(Certificate)
+            .collect();
+
+        let mut keys: Vec<PrivateKey> = pkcs8_private_keys(key_file)
+            .unwrap()
+            .into_iter()
+            .map(PrivateKey)
+            .collect();
 
         if keys.is_empty() {
             return Err(Error::SslKeyRead(key.to_path_buf()));
         }
 
-        config.set_single_cert(cert_chain, keys.remove(0))?;
+        let mut config = TlsServerConfig::builder()
+            .with_safe_defaults()
+            .with_no_client_auth()
+            .with_single_cert(cert_chain, keys.remove(0))?;
 
         let redirect_server = if opts.redirect_insecure() {
             // Always redirect HTTP -> HTTPS
             let redirect_server = HttpServer::new(move || {
-                let mut app: App<_, _> = App::new();
+                let mut app: App<_> = App::new();
                 app = app.service(web::scope("").wrap_fn(move |req, _srv| {
                     // This includes any port in the host name!
                     let host = req.connection_info().host().to_owned();
@@ -742,9 +757,10 @@ async fn start(
     let servers = if let Some(redirect_server) = redirect_server.take() {
         let server = server.run();
         let redirect_server = redirect_server.run();
-        let shutdown_server = server.clone();
-        let shutdown_redirect_server = redirect_server.clone();
+        //let shutdown_server = server.clone();
+        //let shutdown_redirect_server = redirect_server.clone();
 
+        /*
         // Must spawn a thread for the shutdown handler otherwise
         // it prevents Ctrl-c from quitting as the shutdown future
         // will block the current thread
@@ -760,12 +776,14 @@ async fn start(
                 }
             });
         });
+        */
 
         futures::try_join!(redirect_server, server, bind_notify)
     } else {
         let server = server.run();
-        let shutdown_server = server.clone();
+        //let shutdown_server = server.clone();
 
+        /*
         // Must spawn a thread for the shutdown handler otherwise
         // it prevents Ctrl-c from quitting as the shutdown future
         // will block the current thread
@@ -780,6 +798,7 @@ async fn start(
                 }
             });
         });
+        */
 
         futures::try_join!(ok(()), server, bind_notify)
     };
