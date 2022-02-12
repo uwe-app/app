@@ -620,25 +620,7 @@ async fn start(
             }
         }
 
-        app = app.default_service(
-            web::get().to(default_route)
-
-            /*
-            // Show something when no virtual hosts match
-            // for all requests that are not `GET`.
-            web::resource("")
-                .app_data(default_index.clone())
-                .app_data(default_not_found.clone())
-                .route(web::get().to(default_route))
-                .route(
-                    web::route()
-                        .guard(guard::Not(guard::Get()))
-                        .to(HttpResponse::MethodNotAllowed),
-                ),
-            */
-        );
-
-        app
+        app.default_service(web::get().to(default_route))
     })
     .workers(opts.workers());
 
@@ -756,10 +738,9 @@ async fn start(
     let servers = if let Some(redirect_server) = redirect_server.take() {
         let server = server.run();
         let redirect_server = redirect_server.run();
-        //let shutdown_server = server.clone();
-        //let shutdown_redirect_server = redirect_server.clone();
+        let shutdown_server = server.handle();
+        let shutdown_redirect_server = redirect_server.handle();
 
-        /*
         // Must spawn a thread for the shutdown handler otherwise
         // it prevents Ctrl-c from quitting as the shutdown future
         // will block the current thread
@@ -775,14 +756,12 @@ async fn start(
                 }
             });
         });
-        */
 
         futures::try_join!(redirect_server, server, bind_notify)
     } else {
         let server = server.run();
-        //let shutdown_server = server.clone();
+        let handle = server.handle();
 
-        /*
         // Must spawn a thread for the shutdown handler otherwise
         // it prevents Ctrl-c from quitting as the shutdown future
         // will block the current thread
@@ -791,13 +770,12 @@ async fn start(
             rt.block_on(async move {
                 match shutdown.await {
                     Ok(graceful) => {
-                        shutdown_server.stop(graceful).await;
+                        handle.stop(graceful).await;
                     }
                     _ => {}
                 }
             });
         });
-        */
 
         futures::try_join!(ok(()), server, bind_notify)
     };
