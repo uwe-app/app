@@ -612,7 +612,11 @@ async fn start(
             }
         }
 
+        // FIXME: restore default service!
+
+        /*
         app = app.default_service(
+
             // Show something when no virtual hosts match
             // for all requests that are not `GET`.
             web::resource("")
@@ -625,6 +629,7 @@ async fn start(
                         .to(HttpResponse::MethodNotAllowed),
                 ),
         );
+        */
 
         app
     })
@@ -645,22 +650,12 @@ async fn start(
                 .map_err(|_| Error::SslKeyFile(key.to_path_buf()))?,
         );
 
-        /*
-        let cert_chain = certs(cert_file)
-            .map_err(|_| Error::SslCertChain(cert.to_path_buf()))?;
-
-        let mut keys = pkcs8_private_keys(key_file)
-            .map_err(|_| Error::SslPrivateKey(key.to_path_buf()))?;
-        */
-
-        let cert_chain = certs(cert_file)
-            .unwrap()
+        let cert_chain = certs(cert_file)?
             .into_iter()
             .map(Certificate)
             .collect();
 
-        let mut keys: Vec<PrivateKey> = pkcs8_private_keys(key_file)
-            .unwrap()
+        let mut keys: Vec<PrivateKey> = pkcs8_private_keys(key_file)?
             .into_iter()
             .map(PrivateKey)
             .collect();
@@ -669,7 +664,7 @@ async fn start(
             return Err(Error::SslKeyRead(key.to_path_buf()));
         }
 
-        let mut config = TlsServerConfig::builder()
+        let config = TlsServerConfig::builder()
             .with_safe_defaults()
             .with_no_client_auth()
             .with_single_cert(cert_chain, keys.remove(0))?;
@@ -703,7 +698,6 @@ async fn start(
                         HttpResponse::MovedPermanently()
                             .append_header((http::header::LOCATION, url))
                             .finish()
-                            .into_body(),
                     ))
                 }));
                 app

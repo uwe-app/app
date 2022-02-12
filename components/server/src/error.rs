@@ -63,7 +63,7 @@ pub enum Error {
     Notify(#[from] notify::Error),
 
     #[error(transparent)]
-    Tls(#[from] rustls::TlsError),
+    Tls(#[from] rustls::TLSError),
 
     #[error(transparent)]
     TrySend(#[from] tokio::sync::mpsc::error::TrySendError<ConnectionInfo>),
