@@ -1,0 +1,5 @@
+domain-name = "otsushakuhachi.net"
+bucket-name = "otsushakuhachi.net"
+region = ["ap-southeast-1"]
+redirect-bucket-name = "www.otsushakuhachi.net"
+subject-alternative-names = ["*.otsushakuhachi.net"]
