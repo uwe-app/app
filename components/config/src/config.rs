@@ -79,7 +79,7 @@ pub const TAGS: &str = "tags";
 
 /// Used when multiple virtual hosts and inferring
 /// a sub-domain from the primary host name.
-pub const HOST_DEV: &str = "loopback.space";
+pub const HOST_DEV: &str = "loopback.run";
 pub const LOCALHOST: &str = "localhost";
 pub const LOOPBACK_IP: &str = "127.0.0.1";
 

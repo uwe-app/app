@@ -2,12 +2,12 @@ listen = "0.0.0.0"
 port = 8888
 redirect-insecure = true
 
-[ssl]
-cert = "/home/muji/.local/share/mkcert/certs/_wildcard.loopback.space+4.pem"
-key = "/home/muji/.local/share/mkcert/certs/_wildcard.loopback.space+4-key.pem"
-port = 8843
+#[ssl]
+#cert = "/home/muji/.local/share/mkcert/certs/_wildcard.loopback.space+4.pem"
+#key = "/home/muji/.local/share/mkcert/certs/_wildcard.loopback.space+4-key.pem"
+#port = 8843
 
 [[host]]
-name = "blog.loopback.space"
+name = "blog.loopback.run"
 directory = "./blog/build/release"
 log = true

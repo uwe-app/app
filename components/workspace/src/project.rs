@@ -853,7 +853,7 @@ pub struct CompileResult {
 
 impl Into<HostResult> for CompileResult {
     fn into(self) -> HostResult {
-        // Multiple projects will use *.loopback.space names
+        // Multiple projects will use *.loopback.run names
         // otherwise we can just run using the standard `localhost`.
         let use_subdomain = match self.host_settings.host_name {
             HostNameMode::Auto => self.projects.len() > 1,
