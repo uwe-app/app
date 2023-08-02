@@ -35,4 +35,3 @@ scopeguard = "1.1.0"
 [dependencies.search]
 version = "0.1"
 git = "https://github.com/uwe-app/library"
-#path = "../../../library/search/backend"

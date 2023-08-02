@@ -32,4 +32,3 @@ dyn-clone = "1"
 [dependencies.jsonfeed]
 version = "0.3"
 git = "https://github.com/uwe-app/jsonfeed"
-#path = "../../../library/jsonfeed"
