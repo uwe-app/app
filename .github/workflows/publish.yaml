@@ -24,16 +24,6 @@ jobs:
           #- os: macos-latest
             #binary_target: aarch64-apple-darwin
     steps:
-      #- name: Set binary name
-        #if: matrix.binary_target != 'x86_64-pc-windows-msvc'
-        #run: |
-          #echo "BINARY_NAME=release-artifact" >> $GITHUB_ENV
-      #- name: Set binary name (Windows)
-        #if: matrix.binary_target == 'x86_64-pc-windows-msvc'
-        #shell: bash
-        #run: |
-          #echo "BINARY_NAME=release-artifact.exe" >> $GITHUB_ENV
-
       - name: Install musl tools
         if: matrix.binary_target == 'x86_64-unknown-linux-musl'
         run: sudo apt-get install musl-tools
@@ -55,7 +45,7 @@ jobs:
           type: 'zip'
           filename: '${{ matrix.binary_target }}.zip'
           directory: 'target/${{ matrix.binary_target }}/release'
-          exclusions: '*.d *.rlib .cargo-lock .fingerprint/* build/* deps/* examples/* incremental/*'
+          exclusions: '*.d *.rlib .cargo-lock *.fingerprint/* *build/* *deps/* *examples/* incremental/* web-host release-manager'
 
       - name: Upload Binaries
         uses: svenstaro/upload-release-action@v2
