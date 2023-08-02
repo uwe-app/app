@@ -4,7 +4,6 @@ use std::path::PathBuf;
 
 use http::StatusCode;
 use human_bytes::human_bytes;
-use log::debug;
 use pbr::{ProgressBar, Units};
 use semver::Version;
 use tokio::io::AsyncWriteExt;

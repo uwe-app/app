@@ -147,9 +147,6 @@ impl RegistryAccess for RegistryFileAccess {
             )
         })?;
 
-        println!("resolving version {:#?}", version);
-        println!("got package {:#?}", package);
-
         Ok((version.clone(), package.clone()))
     }
 
