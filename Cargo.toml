@@ -28,7 +28,6 @@ members = [
   "components/syntax",
   "components/toc",
   "components/transform",
-  #"components/ui",
   "components/utils",
   "components/web_host",
   "components/workspace",
