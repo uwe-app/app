@@ -1918,6 +1918,7 @@ dependencies = [
 [[package]]
 name = "jsonfeed"
 version = "0.3.0"
+source = "git+https://github.com/uwe-app/jsonfeed#e5adc15435652468576e7169930d1ffb8e84c20f"
 dependencies = [
  "serde",
  "serde_derive",

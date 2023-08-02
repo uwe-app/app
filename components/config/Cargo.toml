@@ -23,9 +23,13 @@ semver = "0.10"
 once_cell = "1.4"
 globset = {version = "0.4.5", features = ["serde1"]}
 pulldown-cmark = { version = "0.8", default-features = false, features = ["simd"] }
-jsonfeed = {version = "0.3", path = "../../../library/jsonfeed"}
 slug = "0.1.4"
 spdx = "0.3.4"
 indexmap = {version = "^1.6.1", features = ["serde-1"]}
 num_cpus = "1.13.0"
 dyn-clone = "1"
+
+[dependencies.jsonfeed]
+version = "0.3"
+git = "https://github.com/uwe-app/jsonfeed"
+#path = "../../../library/jsonfeed"
