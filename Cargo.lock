@@ -3503,6 +3503,7 @@ dependencies = [
 [[package]]
 name = "search"
 version = "0.1.0"
+source = "git+https://github.com/uwe-app/library#8475b85b33a748a285813917e4d0b2f1f8b83f08"
 dependencies = [
  "bincode",
  "console_error_panic_hook",
