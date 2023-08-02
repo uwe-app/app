@@ -72,7 +72,6 @@ async fn fetch(name: &str, version: &Version) -> Result<FetchInfo> {
     }
 
     let len = response.content_length().unwrap_or(0);
-
     log::info!("remote length {}", len);
 
     let mut pb = ProgressBar::on(stderr(), len);
@@ -86,6 +85,9 @@ async fn fetch(name: &str, version: &Version) -> Result<FetchInfo> {
         content_file.write_all(&chunk).await?;
         pb.add(chunk.len() as u64);
     }
+
+    let meta = tokio::fs::metadata(&archive).await?;
+    log::info!("file length {}", meta.len());
 
     let msg = format!(
         " Fetched {}@{} ({})",
