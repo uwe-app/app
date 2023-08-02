@@ -40,20 +40,20 @@ jobs:
           command: build
           args: --bin=uwe --bin=upm --release --target ${{ matrix.binary_target }}
 
-      - name: Prepare exexutables
+      - name: Prepare executables
         run: |
           mkdir -p target/artifacts
           cp target/${{ matrix.binary_target }}/release/uwe target/artifacts
           cp target/${{ matrix.binary_target }}/release/upm target/artifacts
 
-      - name: Archive Release
+      - name: Archive release
         uses: thedoctor0/zip-release@0.7.1
         with:
           type: 'zip'
           filename: '${{ matrix.binary_target }}.zip'
           directory: 'target/artifacts'
 
-      - name: Upload Binaries
+      - name: Upload binaries
         uses: svenstaro/upload-release-action@v2
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
