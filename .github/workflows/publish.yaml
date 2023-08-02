@@ -34,11 +34,11 @@ jobs:
           rustup override set stable
           rustup update stable
           rustup target add ${{ matrix.binary_target }}
-      - name: Build Binary
+      - name: Build binaries
         uses: actions-rs/cargo@v1
         with:
           command: build
-          args: --release --target ${{ matrix.binary_target }}
+          args: --bin=uwe --bin=upm --release --target ${{ matrix.binary_target }}
 
       - name: Prepare exexutables
         run: |

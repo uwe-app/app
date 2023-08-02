@@ -82,9 +82,11 @@ async fn fetch(name: &str, version: &Version) -> Result<FetchInfo> {
 
     let mut content_file = tokio::fs::File::from_std(dest);
     while let Some(chunk) = response.chunk().await? {
-        content_file.write_all(&chunk).await?;
         pb.add(chunk.len() as u64);
+        content_file.write_all(&chunk).await?;
     }
+
+    content_file.flush().await?;
 
     let meta = tokio::fs::metadata(&archive).await?;
     log::info!("file length {}", meta.len());
