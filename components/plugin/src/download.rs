@@ -73,6 +73,8 @@ async fn fetch(name: &str, version: &Version) -> Result<FetchInfo> {
 
     let len = response.content_length().unwrap_or(0);
 
+    log::info!("remote length {}", len);
+
     let mut pb = ProgressBar::on(stderr(), len);
     pb.set_units(Units::Bytes);
     pb.show_speed = false;
