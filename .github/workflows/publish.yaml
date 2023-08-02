@@ -39,13 +39,19 @@ jobs:
         with:
           command: build
           args: --release --target ${{ matrix.binary_target }}
+
+      - name: Prepare exexutables
+        run: |
+          mkdir -p target/artifacts
+          cp target/${{ matrix.binary_target }}/release/uwe target/artifacts
+          cp target/${{ matrix.binary_target }}/release/upm target/artifacts
+
       - name: Archive Release
         uses: thedoctor0/zip-release@0.7.1
         with:
           type: 'zip'
           filename: '${{ matrix.binary_target }}.zip'
-          directory: 'target/${{ matrix.binary_target }}/release'
-          exclusions: '*.d *.rlib .cargo-lock *.fingerprint/* *build/* *deps/* *examples/* incremental/* web-host release-manager'
+          directory: 'target/artifacts'
 
       - name: Upload Binaries
         uses: svenstaro/upload-release-action@v2
