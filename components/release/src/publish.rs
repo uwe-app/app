@@ -18,7 +18,7 @@ use config::plugin::{Plugin, VersionKey};
 /// WARN: Assumes we are building on linux!
 
 const INSTALL_SH: &str = "install.sh";
-const LINUX_PREFIX: &str = "target/release";
+const LINUX_PREFIX: &str = "target/x86_64-linux-gnu/release";
 const MACOS_PREFIX: &str = "target/x86_64-apple-darwin/release";
 
 const UWE_BINARY: &str = "target/release/uwe";
@@ -71,7 +71,7 @@ pub async fn publish(
     }
 
     if !skip_build {
-        build_editor(&manifest)?;
+        //build_editor(&manifest)?;
         build(&manifest)?;
     } else {
         warn!("Skipping build step!");
@@ -247,7 +247,7 @@ fn build_editor(cwd: &PathBuf) -> Result<()> {
 fn build(cwd: &PathBuf) -> Result<()> {
     Command::new("make")
         .current_dir(cwd)
-        .args(vec!["build-release", "build-linux-macos-cross"])
+        .args(vec!["build-release", "build-linux"])
         .stdout(Stdio::inherit())
         .stderr(Stdio::inherit())
         .output()?;

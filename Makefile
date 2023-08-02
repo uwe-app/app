@@ -27,16 +27,19 @@ info:
 	@echo $(VERSION_TAG)
 
 strip-release:
-	strip target/release/uwe
-	strip target/release/uwe-shim
-	strip target/release/upm
-	strip target/release/upm-shim
-	strip target/release/uvm
+	strip target/x86_64-apple-darwin/release/uwe
+	strip target/x86_64-apple-darwin/release/uwe-shim
+	strip target/x86_64-apple-darwin/release/upm
+	strip target/x86_64-apple-darwin/release/upm-shim
+	strip target/x86_64-apple-darwin/release/uvm
 
-compile-release:
-	@cargo build --release
+compile-release-macos:
+	@cargo build --release --target x86_64-apple-darwin
 
-build-release: compile-release strip-release
+compile-release-linux:
+	@cargo build --release --target x86_64-unknown-linux-gnu
+
+build-release: compile-release-macos compile-release-linux strip-release
 
 strip-linux-macos-cross:
 	$(MAC_STRIP) target/x86_64-apple-darwin/release/uwe
