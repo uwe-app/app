@@ -28,9 +28,7 @@ members = [
   "components/syntax",
   "components/toc",
   "components/transform",
-  "components/ui",
   "components/utils",
-  "components/web_host",
   "components/workspace",
 ]
 
@@ -48,9 +46,8 @@ publisher = {version = "0.1", path = "components/publisher" }
 release = {version = "0.1", path = "components/release" }
 scm = {version = "0.1", path = "components/scm" }
 server = {version = "0.1", path = "components/server" }
-ui = {version = "0.1", path = "components/ui" }
+#ui = {version = "0.1", path = "components/ui" }
 utils = {version = "0.1", path = "components/utils" }
-web_host = {version = "0.1", path = "components/web_host" }
 workspace = {version = "0.1", path = "components/workspace" }
 
 futures = "0.3"
@@ -70,7 +67,7 @@ url = "2"
 unic-langid = "0.9.0"
 tokio = { version = "^1.0", features = ["full"] }
 pbr = "1.0.4"
-rusoto_core = "0.46.0"
+rusoto_core = {version = "0.48.0", default-features = false, features = ["rustls"]}
 psup-impl = "0.6.3"
 #psup-impl = { version =  "0.6", path = "/home/muji/git/psup/impl" }
 libc = "0.2"

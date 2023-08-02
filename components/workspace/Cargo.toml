@@ -16,7 +16,6 @@ plugin = {version = "0.1", path = "../plugin" }
 preference = {version = "0.1", path = "../preference" }
 release = {version = "0.1", path = "../release" }
 scm = {version = "0.1", path = "../scm" }
-search = {version = "0.1", path = "../../../library/search/backend" }
 syntax = {version = "0.1", path = "../syntax" }
 utils = {version = "0.1", path = "../utils" }
 
@@ -32,3 +31,8 @@ owning_ref = "^0.4.1"
 ignore = "^0.4"
 tokio = { version = "^1.0", features = ["full"] }
 scopeguard = "1.1.0"
+
+[dependencies.search]
+version = "0.1"
+git = "https://github.com/uwe-app/library"
+branch = "main"

@@ -5,7 +5,6 @@ use sha3::{Digest, Sha3_256};
 use tar::Archive;
 use xz2::write::XzDecoder;
 
-use log::debug;
 use scopeguard::defer;
 
 use crate::{reader::read_path, Error, Result};
@@ -87,8 +86,8 @@ impl PackageReader {
 
         if let Some(ref expected) = self.expects {
             if expected != &self.digest {
-                debug!("Expected {}", hex::encode(expected));
-                debug!("Received {}", hex::encode(self.digest));
+                log::debug!("Expected {}", hex::encode(expected));
+                log::debug!("Received {}", hex::encode(self.digest));
                 return Err(Error::DigestMismatch(self.source));
             }
         }

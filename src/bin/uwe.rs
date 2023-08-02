@@ -130,7 +130,9 @@ async fn run(cmd: Command) -> Result<()> {
                         info!("{:?}", t);
                     }
                 }
-                Err(e) => uwe::print_error(e),
+                Err(e) => {
+                    uwe::fatal(e)?;
+                },
             }
         }
 
@@ -170,10 +172,6 @@ async fn run(cmd: Command) -> Result<()> {
                 uwe::print_error(e);
             }
         }
-
-        Command::Editor { .. } => {
-            unreachable!()
-        }
     }
 
     Ok(())
@@ -208,11 +206,6 @@ fn main() -> Result<()> {
     config::generator::get(Some(app_data));
 
     match &args.cmd {
-        Command::Editor { args } => {
-            if let Err(e) = uwe::editor::run(args) {
-                uwe::print_error(e);
-            }
-        }
         _ => {
             let rt = tokio::runtime::Runtime::new().unwrap();
             let res = rt.block_on(run(args.cmd));

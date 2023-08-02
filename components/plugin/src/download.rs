@@ -4,7 +4,6 @@ use std::path::PathBuf;
 
 use http::StatusCode;
 use human_bytes::human_bytes;
-use log::debug;
 use pbr::{ProgressBar, Units};
 use semver::Version;
 use tokio::io::AsyncWriteExt;
@@ -12,7 +11,7 @@ use tokio::io::AsyncWriteExt;
 use crate::{Error, Result};
 
 pub(crate) const REGISTRY: &str =
-    "https://s3-ap-southeast-1.amazonaws.com/registry.uwe.app";
+    "http://s3-ap-southeast-1.amazonaws.com/registry.uwe.app";
 
 #[derive(Debug)]
 pub struct FetchInfo {
@@ -59,7 +58,7 @@ async fn fetch(name: &str, version: &Version) -> Result<FetchInfo> {
     let archive = local_archive(name, version)?;
     let url = remote_url(name, version);
 
-    debug!("Download {}", url);
+    log::info!("download {}", url);
 
     let dest = File::create(&archive)?;
 
@@ -72,6 +71,7 @@ async fn fetch(name: &str, version: &Version) -> Result<FetchInfo> {
     }
 
     let len = response.content_length().unwrap_or(0);
+    log::info!("remote length {}", len);
 
     let mut pb = ProgressBar::on(stderr(), len);
     pb.set_units(Units::Bytes);
@@ -81,9 +81,14 @@ async fn fetch(name: &str, version: &Version) -> Result<FetchInfo> {
 
     let mut content_file = tokio::fs::File::from_std(dest);
     while let Some(chunk) = response.chunk().await? {
-        content_file.write_all(&chunk).await?;
         pb.add(chunk.len() as u64);
+        content_file.write_all(&chunk).await?;
     }
+
+    content_file.flush().await?;
+
+    let meta = tokio::fs::metadata(&archive).await?;
+    log::info!("file length {}", meta.len());
 
     let msg = format!(
         " Fetched {}@{} ({})",

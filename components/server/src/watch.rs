@@ -17,7 +17,7 @@ use tokio::sync::{
 use url::Url;
 
 use config::server::{
-    ConnectionInfo, HostConfig, ServerConfig, SslConfig, WebDavConfig,
+    ConnectionInfo, HostConfig, ServerConfig, SslConfig, 
 };
 
 use workspace::{CompileResult, HostInfo, HostResult, Invalidator};
@@ -54,7 +54,8 @@ pub async fn watch(
             host.set_deny_iframe(false);
             info.name = config::LOOPBACK_IP.to_string();
         }
-
+        
+        /*
         if let Some(path) = std::env::var(config::ENV_WEBDAV).ok() {
             host.set_webdav(Some(WebDavConfig::new(
                 path.to_string(),
@@ -62,6 +63,7 @@ pub async fn watch(
                 false,
             )));
         }
+        */
     }
 
     let (host_info, hosts): (Vec<HostInfo>, Vec<HostConfig>) =

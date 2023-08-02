@@ -1,7 +1,7 @@
 use structopt::StructOpt;
 
 use super::{
-    Build, Clean, Dev, Docs, Editor, Lang, New, Publish, Server, Sync, Task,
+    Build, Clean, Dev, Docs, Lang, New, Publish, Server, Sync, Task,
     Test,
 };
 
@@ -54,12 +54,6 @@ pub enum Command {
     Dev {
         #[structopt(flatten)]
         args: Dev,
-    },
-
-    /// Launch the editor user interface
-    Editor {
-        #[structopt(flatten)]
-        args: Editor,
     },
 
     /// Remove the build directory

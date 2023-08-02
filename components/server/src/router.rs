@@ -15,9 +15,6 @@ use tokio::sync::oneshot;
 use futures::future::ok;
 use futures::Future;
 
-use webdav_handler::actix::*;
-use webdav_handler::{fakels::FakeLs, localfs::LocalFs, DavConfig, DavHandler};
-
 use actix::Actor;
 use actix_files::{Files, NamedFile};
 use actix_web::{
@@ -30,7 +27,7 @@ use actix_web::{
         StatusCode,
     },
     middleware::{
-        Compat, Condition, DefaultHeaders, Logger, NormalizePath, TrailingSlash,
+        Compat, Condition, DefaultHeaders, Logger, 
     },
     web::{self, Data},
     App, HttpRequest, HttpResponse, HttpServer,
@@ -84,46 +81,6 @@ fn parser() -> &'static Registry<'static> {
         );
         registry
     })
-}
-
-async fn dav_handler(
-    req: DavRequest,
-    davhandler: web::Data<DavHandler>,
-) -> DavResponse {
-    if let Some(prefix) = req.prefix() {
-        let config = DavConfig::new().strip_prefix(prefix);
-        davhandler.handle_with(config, req.request).await.into()
-    } else {
-        davhandler.handle(req.request).await.into()
-    }
-}
-
-async fn preflight(req: HttpRequest) -> HttpResponse {
-    /*
-    println!("Got pre-flight {:?}", req.path());
-    println!("Got pre-flight {:#?}", req.headers().get(header::ACCESS_CONTROL_REQUEST_HEADERS));
-    println!("Got pre-flight {:#?}", req.headers().get(header::ACCESS_CONTROL_REQUEST_METHOD));
-    println!("Got pre-flight {:#?}", req.headers().get(header::ORIGIN));
-    */
-
-    let mut builder = HttpResponse::Ok();
-    if let Some(origin) = req.headers().get(header::ORIGIN) {
-        builder.insert_header((header::ACCESS_CONTROL_ALLOW_ORIGIN, origin));
-    }
-
-    if let Some(method) =
-        req.headers().get(header::ACCESS_CONTROL_REQUEST_METHOD)
-    {
-        builder.insert_header((header::ACCESS_CONTROL_ALLOW_METHODS, method));
-    }
-
-    if let Some(headers) =
-        req.headers().get(header::ACCESS_CONTROL_REQUEST_HEADERS)
-    {
-        builder.insert_header((header::ACCESS_CONTROL_ALLOW_HEADERS, headers));
-    }
-
-    builder.body("")
 }
 
 async fn embedded_handler(
@@ -240,9 +197,6 @@ async fn start(
         }
 
         info!("Host {} ({})", &host.name(), host.directory().display());
-        if let Some(ref webdav) = host.webdav() {
-            info!("Webdav {}", webdav.directory().display());
-        }
 
         if let Some(ref endpoint) = host.endpoint() {
             info!("Websocket endpoint {}", endpoint);
@@ -341,7 +295,8 @@ async fn start(
                     *started = true;
                 }
             }
-
+            
+            /*
             // Setup webdav route
             if let Some(ref webdav) = host.webdav() {
                 let dav_server = DavHandler::builder()
@@ -380,6 +335,7 @@ async fn start(
                         .service(web::resource("/{tail:.*}").to(dav_handler)),
                 );
             }
+            */
 
             let live_render_tx = if watch {
                 Arc::new(Some(
