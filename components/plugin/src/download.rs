@@ -59,7 +59,7 @@ async fn fetch(name: &str, version: &Version) -> Result<FetchInfo> {
     let archive = local_archive(name, version)?;
     let url = remote_url(name, version);
 
-    debug!("Download {}", url);
+    log::info!("download {}", url);
 
     let dest = File::create(&archive)?;
 
