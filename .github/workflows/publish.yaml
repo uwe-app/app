@@ -55,7 +55,7 @@ jobs:
           type: 'zip'
           filename: '${{ matrix.binary_target }}.zip'
           directory: 'target/${{ matrix.binary_target }}/release'
-          exclusions: '*.d *.rlib .cargo-lock .fingerprint build deps examples incremental'
+          exclusions: '*.d *.rlib .cargo-lock .fingerprint/* build/* deps/* examples/* incremental/*'
 
       - name: Upload Binaries
         uses: svenstaro/upload-release-action@v2
