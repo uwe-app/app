@@ -8,7 +8,7 @@ ar = "x86_64-apple-darwin20.2-ar"
 #CC = "o64-clang"
 #CXX = "o64-clang++"
 
-[target.x86_64-unknown-linux-gnu]
-rustflags = [
-    "-C", "link-arg=-fuse-ld=lld",
-]
+#[target.x86_64-unknown-linux-gnu]
+#rustflags = [
+    #"-C", "link-arg=-fuse-ld=lld",
+#]

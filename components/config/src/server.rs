@@ -407,10 +407,12 @@ pub struct HostConfig {
 
     /// Log server requests.
     log: bool,
-
+        
+    /*
     /// Configuration for webdav.
     #[serde(skip)]
     webdav: Option<WebDavConfig>,
+    */
 
     #[serde(skip)]
     redirects: Option<Redirects>,
@@ -426,7 +428,7 @@ impl Default for HostConfig {
             name: crate::config::HOST.to_string(),
             directory: PathBuf::from(""),
             embedded: None,
-            webdav: None,
+            //webdav: None,
             redirects: None,
             endpoint: None,
             disable_cache: false,
@@ -522,7 +524,8 @@ impl HostConfig {
     pub fn set_redirects(&mut self, redirects: Option<Redirects>) {
         self.redirects = redirects;
     }
-
+    
+    /*
     pub fn webdav(&self) -> &Option<WebDavConfig> {
         &self.webdav
     }
@@ -530,6 +533,7 @@ impl HostConfig {
     pub fn set_webdav(&mut self, webdav: Option<WebDavConfig>) {
         self.webdav = webdav;
     }
+    */
 
     /// Attempt to load from a redirects file into this host.
     pub fn load_redirects(&mut self) -> Result<()> {
@@ -542,6 +546,7 @@ impl HostConfig {
     }
 }
 
+/*
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct WebDavConfig {
     /// Path in the virtual host used to mount the webdav directory.
@@ -573,3 +578,4 @@ impl WebDavConfig {
         self.listing
     }
 }
+*/

@@ -15,8 +15,8 @@ use tokio::sync::oneshot;
 use futures::future::ok;
 use futures::Future;
 
-use webdav_handler::actix::*;
-use webdav_handler::{fakels::FakeLs, localfs::LocalFs, DavConfig, DavHandler};
+//use webdav_handler::actix::*;
+//use webdav_handler::{fakels::FakeLs, localfs::LocalFs, DavConfig, DavHandler};
 
 use actix::Actor;
 use actix_files::{Files, NamedFile};
@@ -86,6 +86,7 @@ fn parser() -> &'static Registry<'static> {
     })
 }
 
+/*
 async fn dav_handler(
     req: DavRequest,
     davhandler: web::Data<DavHandler>,
@@ -97,6 +98,7 @@ async fn dav_handler(
         davhandler.handle(req.request).await.into()
     }
 }
+*/
 
 async fn preflight(req: HttpRequest) -> HttpResponse {
     /*
@@ -240,9 +242,11 @@ async fn start(
         }
 
         info!("Host {} ({})", &host.name(), host.directory().display());
+        /*
         if let Some(ref webdav) = host.webdav() {
             info!("Webdav {}", webdav.directory().display());
         }
+        */
 
         if let Some(ref endpoint) = host.endpoint() {
             info!("Websocket endpoint {}", endpoint);
@@ -341,7 +345,8 @@ async fn start(
                     *started = true;
                 }
             }
-
+            
+            /*
             // Setup webdav route
             if let Some(ref webdav) = host.webdav() {
                 let dav_server = DavHandler::builder()
@@ -380,6 +385,7 @@ async fn start(
                         .service(web::resource("/{tail:.*}").to(dav_handler)),
                 );
             }
+            */
 
             let live_render_tx = if watch {
                 Arc::new(Some(

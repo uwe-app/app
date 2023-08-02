@@ -87,8 +87,8 @@ impl PackageReader {
 
         if let Some(ref expected) = self.expects {
             if expected != &self.digest {
-                debug!("Expected {}", hex::encode(expected));
-                debug!("Received {}", hex::encode(self.digest));
+                println!("Expected {}", hex::encode(expected));
+                println!("Received {}", hex::encode(self.digest));
                 return Err(Error::DigestMismatch(self.source));
             }
         }

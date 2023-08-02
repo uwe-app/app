@@ -9,12 +9,12 @@ utils = {version = "0.1", path = "../utils" }
 
 thiserror = "1"
 log = "0.4.8"
-rusoto_core = "0.46.0"
-rusoto_signature = "0.46.0"
-rusoto_s3 = "0.46.0"
-rusoto_cloudfront = "0.46.0"
-rusoto_route53 = "0.46.0"
-rusoto_acm = "0.46.0"
+rusoto_signature = "0.48.0"
+rusoto_core = {version = "0.48.0", default-features = false, features = ["rustls"]}
+rusoto_s3 = {version = "0.48.0", default-features = false, features = ["rustls"]}
+rusoto_cloudfront = {version = "0.48.0", default-features = false, features = ["rustls"]}
+rusoto_route53 = {version = "0.48.0", default-features = false, features = ["rustls"]}
+rusoto_acm = {version = "0.48.0", default-features = false, features = ["rustls"]}
 tokio = { version = "^1.0", features = ["full"] }
 serde_json = "1"
 serde_with = "1.5.1"

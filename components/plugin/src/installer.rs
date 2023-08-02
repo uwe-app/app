@@ -399,6 +399,7 @@ pub async fn install_registry<P: AsRef<Path>>(
     let fetch_info = download::get(name, &version).await?;
 
     debug!("Extracting archive {}", fetch_info.archive.display());
+    log::info!("checksum {}", package.digest);
     let reader = PackageReader::new(fetch_info.archive.to_path_buf())
         .set_expects_checksum(Some(hex::decode(&package.digest)?))
         .set_overwrite(true)

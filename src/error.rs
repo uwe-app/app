@@ -155,8 +155,8 @@ pub enum Error {
     #[error(transparent)]
     Shim(#[from] crate::shim::Error),
 
-    #[error(transparent)]
-    Ui(#[from] ui::Error),
+    //#[error(transparent)]
+    //Ui(#[from] ui::Error),
 }
 
 pub fn panic_hook() {

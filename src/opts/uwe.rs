@@ -56,12 +56,6 @@ pub enum Command {
         args: Dev,
     },
 
-    /// Launch the editor user interface
-    Editor {
-        #[structopt(flatten)]
-        args: Editor,
-    },
-
     /// Remove the build directory
     Clean {
         #[structopt(flatten)]
