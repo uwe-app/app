@@ -29,7 +29,6 @@ members = [
   "components/toc",
   "components/transform",
   "components/utils",
-  "components/web_host",
   "components/workspace",
 ]
 
@@ -49,7 +48,6 @@ scm = {version = "0.1", path = "components/scm" }
 server = {version = "0.1", path = "components/server" }
 #ui = {version = "0.1", path = "components/ui" }
 utils = {version = "0.1", path = "components/utils" }
-web_host = {version = "0.1", path = "components/web_host" }
 workspace = {version = "0.1", path = "components/workspace" }
 
 futures = "0.3"

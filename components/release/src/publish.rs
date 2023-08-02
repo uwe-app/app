@@ -71,7 +71,6 @@ pub async fn publish(
     }
 
     if !skip_build {
-        //build_editor(&manifest)?;
         build(&manifest)?;
     } else {
         warn!("Skipping build step!");
@@ -229,17 +228,6 @@ fn update_documentation(
 
     // TODO: launch a server with the documentation for verification?
 
-    Ok(())
-}
-
-/// Compile the editor resources.
-fn build_editor(cwd: &PathBuf) -> Result<()> {
-    Command::new("cargo")
-        .current_dir(cwd)
-        .args(vec!["run", "--", "build", "--exec", "../editor"])
-        .stdout(Stdio::inherit())
-        .stderr(Stdio::inherit())
-        .output()?;
     Ok(())
 }
 

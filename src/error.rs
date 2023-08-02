@@ -150,13 +150,7 @@ pub enum Error {
     Release(#[from] release::Error),
 
     #[error(transparent)]
-    WebHost(#[from] web_host::Error),
-
-    #[error(transparent)]
     Shim(#[from] crate::shim::Error),
-
-    //#[error(transparent)]
-    //Ui(#[from] ui::Error),
 }
 
 pub fn panic_hook() {
